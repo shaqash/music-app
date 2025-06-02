@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
     View,
-    Text,
-    TextInput,
-    TouchableOpacity,
+    Text, TouchableOpacity,
     StyleSheet,
-    ScrollView,
-    ActivityIndicator,
+    ScrollView
 } from 'react-native';
 import NewPipeService from '../services/NewPipeService';
-import AudioPlayer from './AudioPlayer';
 import type { StreamInfo, AudioStream } from '../types/newpipe';
 
 interface StreamInfoViewerProps {
@@ -23,15 +19,12 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
     onClose,
     onAudioStreamSelect,
 }) => {
-    const [url, setUrl] = useState(initialUrl);
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [streamInfo, setStreamInfo] = useState<StreamInfo | null>(null);
     const [selectedAudioStream, setSelectedAudioStream] = useState<AudioStream | null>(null);
 
     useEffect(() => {
         if (initialUrl) {
-            setUrl(initialUrl);
             fetchStreamInfo(initialUrl);
         }
     }, [initialUrl]);
@@ -43,7 +36,6 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
         }
 
         try {
-            setLoading(true);
             setError(null);
             const info = await NewPipeService.getStreamInfo(videoUrl);
             setStreamInfo(info);
@@ -58,7 +50,6 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to fetch stream info');
         } finally {
-            setLoading(false);
         }
     };
 
@@ -76,7 +67,7 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
                     style={styles.closeButton}
                     onPress={onClose}
                 >
-                    <Text style={styles.closeButtonText}>←</Text>
+                    <Text style={styles.closeButtonText}>{'<'}</Text>
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Stream Info</Text>
             </View>
@@ -102,7 +93,7 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
                             onPress={() => handleStreamSelect(stream)}
                         >
                             <Text style={styles.streamText}>
-                                {stream.format} - {(stream.averageBitrate / 1000).toFixed(0)}kbps
+                                {stream.format}
                             </Text>
                         </TouchableOpacity>
                     ))}
@@ -123,13 +114,13 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
+        padding: 12,
         borderBottomWidth: 1,
         borderBottomColor: '#282828',
     },
     closeButton: {
         padding: 8,
-        marginRight: 16,
+        marginRight: 6,
     },
     closeButtonText: {
         color: '#fff',

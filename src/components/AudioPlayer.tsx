@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import Sound from 'react-native-sound';
 
-// Enable playback in silence mode (iOS) and ignore errors
 Sound.setCategory('Playback', true);
 
 interface AudioPlayerProps {
@@ -242,7 +241,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
   },
   playButton: {
     width: 40,
@@ -291,11 +289,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 3,
     color: '#fff',
   },
   trackInfo: {
-    marginBottom: 8,
+    marginBottom: 12,
   },
   artist: {
     color: '#b3b3b3',
