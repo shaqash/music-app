@@ -96,18 +96,25 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title, subtitle, onTitle
             return;
           }
           setSound(newSound);
+          setIsPlaying(true);
           setDuration(newSound.getDuration());
 
-          // Auto-play when loaded
-          newSound.play((success: boolean) => {
-            if (!success) {
-              console.error('Playback failed');
-              setError('Playback failed');
-              setIsPlaying(false);
-            }
-          });
-          setIsPlaying(true);
-          startTimeUpdate(newSound);
+          // Wait a brief moment for the sound to be fully ready
+          setTimeout(() => {
+            startTimeUpdate(newSound);
+            
+            // Auto-play when loaded
+            newSound.play((success: boolean) => {
+              if (!success) {
+                console.error('Playback failed');
+                setError('Playback failed');
+                setIsPlaying(false);
+                stopTimeUpdate();
+              } else {
+                setIsPlaying(true);
+              }
+            });
+          }, 100);
         });
       } catch (err) {
         console.error('Error creating Sound instance:', err);
