@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import Sound from 'react-native-sound';
 import { PlayIcon, PauseIcon } from './PlayerIcons';
+import { usePlayNextTrack } from '../hooks/usePlayNextTrack';
 
 Sound.setCategory('Playback', true);
 
@@ -38,6 +39,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title, subtitle, onTitle
   const [isSeeking, setIsSeeking] = useState(false);
   const progressAnim = useRef(new Animated.Value(0)).current;
   const intervalRef = useRef<number | null>(null);
+  const { playNextTrack } = usePlayNextTrack();
 
   const startTimeUpdate = useCallback((soundObj: Sound) => {
     if (intervalRef.current !== null) {
@@ -102,7 +104,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title, subtitle, onTitle
           // Wait a brief moment for the sound to be fully ready
           setTimeout(() => {
             startTimeUpdate(newSound);
-            
+
             // Auto-play when loaded
             newSound.play((success: boolean) => {
               if (!success) {
@@ -110,12 +112,13 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title, subtitle, onTitle
                 setError('Playback failed');
                 setIsPlaying(false);
                 stopTimeUpdate();
-              } else {
-                setIsPlaying(true);
               }
             });
           }, 100);
         });
+
+        // Ensure we don't loop
+        newSound.setNumberOfLoops(0);
       } catch (err) {
         console.error('Error creating Sound instance:', err);
         setError('Failed to initialize audio player');
@@ -180,9 +183,11 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title, subtitle, onTitle
             <Text style={styles.title} numberOfLines={1}>
               {title}
             </Text>
-            <Text style={styles.artist} numberOfLines={1}>
-              {subtitle}
-            </Text>
+            {subtitle && (
+              <Text style={styles.artist} numberOfLines={1}>
+                {subtitle}
+              </Text>
+            )}
           </View>
         </TouchableOpacity>
       )}

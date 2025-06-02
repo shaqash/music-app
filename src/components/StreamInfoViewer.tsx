@@ -9,6 +9,7 @@ import NewPipeService from '../services/NewPipeService';
 import type { StreamInfo, AudioStream } from '../types/newpipe';
 import { BackIcon } from './PlayerIcons';
 import { RenderHTML } from 'react-native-render-html';
+import NextUpQueue from './NextUpQueue';
 
 interface StreamInfoViewerProps {
     initialUrl?: string;
