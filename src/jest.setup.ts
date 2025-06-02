@@ -4,5 +4,6 @@ import { NativeModules } from 'react-native';
 NativeModules.NewPipeModule = {
     getStreamInfo: jest.fn(),
     getVideoId: jest.fn(),
-    searchYoutube: jest.fn()
+    searchYoutube: jest.fn(),
+    getRelatedVideos: jest.fn(),
 }; 

@@ -30,6 +30,15 @@ export class NewPipeService {
     static async searchYoutube(query: string): Promise<SearchResult[]> {
         return await NewPipeModule.searchYoutube(query);
     }
+
+    /**
+     * Get related videos for a given video URL
+     * @param url The URL of the video
+     * @returns Promise<SearchResult[]>
+     */
+    static async getRelatedVideos(url: string): Promise<SearchResult[]> {
+        return await NewPipeModule.getRelatedVideos(url);
+    }
 }
 
 export default NewPipeService; 

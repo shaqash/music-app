@@ -31,6 +31,7 @@ declare module 'react-native' {
             getStreamInfo(url: string): Promise<StreamInfo>;
             getVideoId(url: string): Promise<string>;
             searchYoutube(query: string): Promise<SearchResult[]>;
+            getRelatedVideos(url: string): Promise<SearchResult[]>;
         };
     }
 } 

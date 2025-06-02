@@ -54,6 +54,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#1f1f1f',
   },
+  contentContainer: {
+    flex: 1,
+    backgroundColor: '#121212',
+  },
 });
 
 export default App;

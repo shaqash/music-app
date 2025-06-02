@@ -231,4 +231,41 @@ public class NewPipeModule extends ReactContextBaseJavaModule {
             promise.reject("SEARCH_ERROR", e.getMessage());
         }
     }
+
+    @ReactMethod
+    public void getRelatedVideos(String url, Promise promise) {
+        try {
+            StreamingService youtubeService = NewPipe.getService(0); // 0 is YouTube
+            StreamExtractor extractor = youtubeService.getStreamExtractor(url);
+            extractor.fetchPage();
+            
+            StreamInfo streamInfo = StreamInfo.getInfo(extractor);
+            WritableArray results = Arguments.createArray();
+            
+            // Get related items from the stream info
+            streamInfo.getRelatedItems().forEach(item -> {
+                if (item instanceof StreamInfoItem) {
+                    StreamInfoItem streamItem = (StreamInfoItem) item;
+                    WritableMap resultMap = Arguments.createMap();
+                    resultMap.putString("title", streamItem.getName());
+                    resultMap.putString("url", streamItem.getUrl());
+                    
+                    // Get thumbnail URL from the stream item
+                    List<Image> thumbnails = streamItem.getThumbnails();
+                    if (!thumbnails.isEmpty()) {
+                        String thumbnailUrl = thumbnails.get(0).getUrl();
+                        if (thumbnailUrl != null && !thumbnailUrl.isEmpty()) {
+                            resultMap.putString("thumbnailUrl", thumbnailUrl);
+                        }
+                    }
+                    
+                    results.pushMap(resultMap);
+                }
+            });
+            
+            promise.resolve(results);
+        } catch (Exception e) {
+            promise.reject("RELATED_VIDEOS_ERROR", e.getMessage());
+        }
+    }
 } 
