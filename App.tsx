@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import NewPipeService from './src/services/NewPipeService';
 import { StorageService } from './src/services/StorageService';
@@ -24,7 +25,7 @@ function App(): React.JSX.Element {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
-  
+
   // Player state
   const [currentStreamInfo, setCurrentStreamInfo] = useState<StreamInfo | null>(null);
   const [currentAudioStream, setCurrentAudioStream] = useState<AudioStream | null>(null);
@@ -53,13 +54,13 @@ function App(): React.JSX.Element {
     try {
       // Save to recent videos
       await StorageService.addRecentVideo(track);
-      
+
       const info = await NewPipeService.getStreamInfo(track.url);
       setCurrentStreamInfo(info);
-      
+
       // Automatically select highest quality audio stream
       if (info.audioStreams && info.audioStreams.length > 0) {
-        const bestAudio = info.audioStreams.reduce((prev, current) => 
+        const bestAudio = info.audioStreams.reduce((prev, current) =>
           prev.averageBitrate > current.averageBitrate ? prev : current
         );
         setCurrentAudioStream(bestAudio);
@@ -159,20 +160,30 @@ function App(): React.JSX.Element {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#121212" />
+    <SafeAreaView style={styles.safeArea} >
       {renderMainContent()}
-      <MusicPlayer
-        streamInfo={currentStreamInfo}
-        audioStream={currentAudioStream}
-        isLoading={loadingStream}
-        onStreamInfoPress={() => setShowStreamInfo(true)}
-      />
+      <View style={styles.playerContainer}>
+        <MusicPlayer
+          streamInfo={currentStreamInfo}
+          audioStream={currentAudioStream}
+          isLoading={loadingStream}
+          onStreamInfoPress={() => setShowStreamInfo(true)}
+        />
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#121212',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+  playerContainer: {
+    backgroundColor: '#282828',
+    paddingBottom: Platform.OS === 'android' ? 8 : 0,
+  },
   container: {
     flex: 1,
     backgroundColor: '#121212',

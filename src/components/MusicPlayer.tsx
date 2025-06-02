@@ -52,7 +52,6 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#282828',
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#121212',
