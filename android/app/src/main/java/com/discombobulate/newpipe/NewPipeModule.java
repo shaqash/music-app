@@ -12,12 +12,16 @@ import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.services.youtube.YoutubeService;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
+import org.schabi.newpipe.extractor.stream.StreamExtractor;
+import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
+import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.localization.Localization;
 import org.schabi.newpipe.extractor.downloader.Downloader;
 import org.schabi.newpipe.extractor.downloader.Request;
 import org.schabi.newpipe.extractor.downloader.Response;
+import org.schabi.newpipe.extractor.MediaFormat;
 
 import java.io.IOException;
 import java.util.List;
@@ -95,15 +99,26 @@ public class NewPipeModule extends ReactContextBaseJavaModule {
             result.putInt("viewCount", (int) streamInfo.getViewCount());
             
             // Get video streams
-            WritableArray streams = Arguments.createArray();
+            WritableArray videoStreams = Arguments.createArray();
             for (VideoStream stream : streamInfo.getVideoStreams()) {
                 WritableMap streamMap = Arguments.createMap();
                 streamMap.putString("url", stream.getUrl());
                 streamMap.putString("resolution", stream.getResolution());
                 streamMap.putString("format", stream.getFormat().name());
-                streams.pushMap(streamMap);
+                videoStreams.pushMap(streamMap);
             }
-            result.putArray("videoStreams", streams);
+            result.putArray("videoStreams", videoStreams);
+            
+            // Get audio streams
+            WritableArray audioStreams = Arguments.createArray();
+            for (AudioStream stream : streamInfo.getAudioStreams()) {
+                WritableMap streamMap = Arguments.createMap();
+                streamMap.putString("url", stream.getUrl());
+                streamMap.putInt("averageBitrate", stream.getAverageBitrate());
+                streamMap.putString("format", stream.getFormat().name());
+                audioStreams.pushMap(streamMap);
+            }
+            result.putArray("audioStreams", audioStreams);
             
             promise.resolve(result);
         } catch (ExtractionException | IOException e) {
@@ -119,6 +134,57 @@ public class NewPipeModule extends ReactContextBaseJavaModule {
             promise.resolve(videoId);
         } catch (Exception e) {
             promise.reject("ID_EXTRACTION_ERROR", e.getMessage());
+        }
+    }
+
+    @ReactMethod
+    public void getAudioStreamInfo(String url, Promise promise) {
+        try {
+            StreamingService youtubeService = NewPipe.getService(0); // 0 is YouTube
+            StreamExtractor extractor = youtubeService.getStreamExtractor(url);
+            extractor.fetchPage();
+            
+            StreamInfo streamInfo = StreamInfo.getInfo(extractor);
+            
+            WritableMap result = Arguments.createMap();
+            
+            // Basic stream information
+            result.putString("title", streamInfo.getName());
+            result.putString("uploaderName", streamInfo.getUploaderName());
+            result.putDouble("duration", streamInfo.getDuration());
+            
+            // Get all available audio streams
+            WritableArray audioStreams = Arguments.createArray();
+            List<AudioStream> streams = streamInfo.getAudioStreams();
+            
+            for (AudioStream stream : streams) {
+                WritableMap streamMap = Arguments.createMap();
+                streamMap.putString("url", stream.getUrl());
+                streamMap.putInt("averageBitrate", stream.getAverageBitrate());
+                streamMap.putString("format", stream.getFormat().name());
+                
+                // Additional audio-specific information
+                streamMap.putInt("bandwidth", stream.getBitrate());
+                if (stream.getFormat() == MediaFormat.M4A) {
+                    streamMap.putString("codec", "aac");
+                } else if (stream.getFormat() == MediaFormat.WEBMA) {
+                    streamMap.putString("codec", "opus");
+                }
+                
+                audioStreams.pushMap(streamMap);
+            }
+            result.putArray("audioStreams", audioStreams);
+            
+            // Add stream metadata
+            WritableMap metadata = Arguments.createMap();
+            metadata.putString("category", streamInfo.getCategory());
+            metadata.putDouble("startPosition", streamInfo.getStartPosition());
+            metadata.putString("streamType", streamInfo.getStreamType().toString());
+            result.putMap("metadata", metadata);
+            
+            promise.resolve(result);
+        } catch (ExtractionException | IOException e) {
+            promise.reject("AUDIO_EXTRACTION_ERROR", e.getMessage());
         }
     }
 } 

@@ -8,36 +8,45 @@ import {
     ScrollView,
     ActivityIndicator,
 } from 'react-native';
-import NewPipeService from '../services/NewPipeService';
-import type { StreamInfo } from '../types/newpipe';
+import NewPipeModule from '../services/NewPipeService';
+import AudioPlayer from './AudioPlayer';
+import type { StreamInfo, AudioStream } from '../types/newpipe';
 
 export const StreamInfoViewer: React.FC = () => {
     const [url, setUrl] = useState('');
-    const [streamInfo, setStreamInfo] = useState<StreamInfo | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [streamInfo, setStreamInfo] = useState<StreamInfo | null>(null);
+    const [selectedAudioStream, setSelectedAudioStream] = useState<AudioStream | null>(null);
 
-    const handleFetchInfo = async () => {
-        if (!url.trim()) {
+    const fetchStreamInfo = async () => {
+        if (!url) {
             setError('Please enter a URL');
             return;
         }
 
-        setLoading(true);
-        setError(null);
         try {
-            const info = await NewPipeService.getStreamInfo(url);
+            setLoading(true);
+            setError(null);
+            const info = await NewPipeModule.getStreamInfo(url);
             setStreamInfo(info);
+            
+            // Automatically select highest quality audio stream
+            if (info.audioStreams && info.audioStreams.length > 0) {
+                const bestAudio = info.audioStreams.reduce((prev: AudioStream, current: AudioStream) => 
+                    prev.averageBitrate > current.averageBitrate ? prev : current
+                );
+                setSelectedAudioStream(bestAudio);
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to fetch stream info');
-            setStreamInfo(null);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <View style={styles.container}>
+        <ScrollView style={styles.container}>
             <View style={styles.inputContainer}>
                 <TextInput
                     style={styles.input}
@@ -45,17 +54,17 @@ export const StreamInfoViewer: React.FC = () => {
                     onChangeText={setUrl}
                     placeholder="Enter video URL"
                     placeholderTextColor="#666"
-                    autoCapitalize="none"
-                    autoCorrect={false}
                 />
                 <TouchableOpacity
-                    style={[styles.button, loading && styles.buttonDisabled]}
-                    onPress={handleFetchInfo}
+                    style={styles.button}
+                    onPress={fetchStreamInfo}
                     disabled={loading}
                 >
-                    <Text style={styles.buttonText}>
-                        {loading ? 'Loading...' : 'Get Info'}
-                    </Text>
+                    {loading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.buttonText}>Get Info</Text>
+                    )}
                 </TouchableOpacity>
             </View>
 
@@ -63,29 +72,40 @@ export const StreamInfoViewer: React.FC = () => {
                 <Text style={styles.error}>{error}</Text>
             )}
 
-            {loading && (
-                <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
-            )}
-
             {streamInfo && (
-                <ScrollView style={styles.infoContainer}>
+                <View style={styles.infoContainer}>
                     <Text style={styles.title}>{streamInfo.title}</Text>
-                    <Text style={styles.uploader}>By: {streamInfo.uploaderName}</Text>
-                    <Text style={styles.views}>Views: {streamInfo.viewCount}</Text>
+                    <Text style={styles.uploader}>By {streamInfo.uploaderName}</Text>
+                    <Text style={styles.views}>{streamInfo.viewCount.toLocaleString()} views</Text>
                     
-                    <Text style={styles.sectionTitle}>Description:</Text>
-                    <Text style={styles.description}>{streamInfo.description}</Text>
-                    
-                    <Text style={styles.sectionTitle}>Available Streams:</Text>
-                    {streamInfo.videoStreams.map((stream, index) => (
-                        <View key={index} style={styles.streamItem}>
-                            <Text>Resolution: {stream.resolution}</Text>
-                            <Text>Format: {stream.format}</Text>
-                        </View>
+                    {selectedAudioStream && (
+                        <AudioPlayer
+                            url={selectedAudioStream.url}
+                            title={`${streamInfo.title} (${selectedAudioStream.format})`}
+                        />
+                    )}
+
+                    <Text style={styles.sectionTitle}>Available Audio Streams</Text>
+                    {streamInfo.audioStreams.map((stream, index) => (
+                        <TouchableOpacity
+                            key={index}
+                            style={[
+                                styles.streamItem,
+                                selectedAudioStream?.url === stream.url && styles.selectedStream
+                            ]}
+                            onPress={() => setSelectedAudioStream(stream)}
+                        >
+                            <Text style={styles.streamText}>
+                                {stream.format} - {(stream.averageBitrate / 1000).toFixed(0)}kbps
+                            </Text>
+                        </TouchableOpacity>
                     ))}
-                </ScrollView>
+
+                    <Text style={styles.sectionTitle}>Description</Text>
+                    <Text style={styles.description}>{streamInfo.description}</Text>
+                </View>
             )}
-        </View>
+        </ScrollView>
     );
 };
 
@@ -93,7 +113,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 16,
-        backgroundColor: '#fff',
     },
     inputContainer: {
         flexDirection: 'row',
@@ -101,37 +120,36 @@ const styles = StyleSheet.create({
     },
     input: {
         flex: 1,
-        height: 48,
         borderWidth: 1,
         borderColor: '#ccc',
-        borderRadius: 8,
-        paddingHorizontal: 12,
+        borderRadius: 4,
+        padding: 8,
         marginRight: 8,
-        fontSize: 16,
+        color: '#000',
     },
     button: {
         backgroundColor: '#007AFF',
-        paddingHorizontal: 16,
+        padding: 10,
+        borderRadius: 4,
         justifyContent: 'center',
-        borderRadius: 8,
-    },
-    buttonDisabled: {
-        backgroundColor: '#999',
     },
     buttonText: {
         color: '#fff',
-        fontSize: 16,
         fontWeight: '600',
     },
     error: {
         color: 'red',
         marginBottom: 16,
     },
-    loader: {
-        marginVertical: 24,
-    },
     infoContainer: {
-        flex: 1,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     title: {
         fontSize: 20,
@@ -160,9 +178,20 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     streamItem: {
-        padding: 12,
         backgroundColor: '#f5f5f5',
-        borderRadius: 8,
+        padding: 12,
+        borderRadius: 4,
         marginBottom: 8,
     },
-}); 
+    selectedStream: {
+        backgroundColor: '#e3f2fd',
+        borderColor: '#2196f3',
+        borderWidth: 1,
+    },
+    streamText: {
+        fontSize: 14,
+        color: '#333',
+    },
+});
+
+export default StreamInfoViewer; 

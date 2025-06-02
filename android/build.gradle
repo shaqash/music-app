@@ -6,6 +6,7 @@ buildscript {
         targetSdkVersion = 35
         ndkVersion = "27.1.12297006"
         kotlinVersion = "2.0.21"
+        javaVersion = JavaVersion.VERSION_17
     }
     repositories {
         google()
@@ -23,5 +24,14 @@ apply plugin: "com.facebook.react.rootproject"
 allprojects {
     repositories {
         maven { url 'https://jitpack.io' }
+        google()
+        mavenCentral()
+    }
+    
+    plugins.withType(JavaPlugin) {
+        java {
+            sourceCompatibility = javaVersion
+            targetCompatibility = javaVersion
+        }
     }
 }

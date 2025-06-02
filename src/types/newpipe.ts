@@ -4,12 +4,19 @@ export interface VideoStream {
     format: string;
 }
 
+export interface AudioStream {
+    url: string;
+    averageBitrate: number;
+    format: string;
+}
+
 export interface StreamInfo {
     title: string;
     uploaderName: string;
     description: string;
     viewCount: number;
     videoStreams: VideoStream[];
+    audioStreams: AudioStream[];
 }
 
 declare module 'react-native' {
