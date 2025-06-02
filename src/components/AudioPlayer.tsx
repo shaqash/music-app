@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   TouchableOpacity,
   Text,
   StyleSheet,
   ActivityIndicator,
+  Pressable,
+  LayoutRectangle,
+  Animated,
 } from 'react-native';
 import Sound from 'react-native-sound';
 
@@ -14,35 +17,77 @@ Sound.setCategory('Playback', true);
 interface AudioPlayerProps {
   url?: string;
   title?: string;
+  subtitle?: string;
+  onTitlePress?: () => void;
 }
 
-const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title }) => {
+const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title, subtitle, onTitlePress }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [sound, setSound] = useState<Sound | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [progressBarWidth, setProgressBarWidth] = useState(0);
+  const [isSeeking, setIsSeeking] = useState(false);
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const intervalRef = useRef<number | null>(null);
+
+  const startTimeUpdate = useCallback((soundObj: Sound) => {
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current);
+    }
+    intervalRef.current = setInterval(() => {
+      if (!isSeeking) {
+        soundObj.getCurrentTime((seconds: number) => {
+          setCurrentTime(seconds);
+          const progress = seconds / soundObj.getDuration();
+          Animated.timing(progressAnim, {
+            toValue: progress,
+            duration: 250,
+            useNativeDriver: false,
+          }).start();
+        });
+      }
+    }, 250) as unknown as number;
+  }, [progressAnim, isSeeking]);
+
+  const stopTimeUpdate = useCallback(() => {
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
-      // Cleanup sound on unmount
+      stopTimeUpdate();
       if (sound) {
         sound.release();
       }
     };
-  }, []);
+  }, [sound, stopTimeUpdate]);
 
   useEffect(() => {
     if (url) {
-      // Release previous sound if exists
       if (sound) {
+        stopTimeUpdate();
         sound.release();
       }
-      
+
       setIsLoading(true);
       setError(null);
+      setCurrentTime(0);
+      setDuration(0);
+      progressAnim.setValue(0);
 
       try {
-        // Initialize new sound with basePath parameter
         const newSound = new Sound(url, undefined, (error: Error | null) => {
           setIsLoading(false);
           if (error) {
@@ -51,6 +96,18 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title }) => {
             return;
           }
           setSound(newSound);
+          setDuration(newSound.getDuration());
+
+          // Auto-play when loaded
+          newSound.play((success: boolean) => {
+            if (!success) {
+              console.error('Playback failed');
+              setError('Playback failed');
+              setIsPlaying(false);
+            }
+          });
+          setIsPlaying(true);
+          startTimeUpdate(newSound);
         });
       } catch (err) {
         console.error('Error creating Sound instance:', err);
@@ -58,23 +115,50 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title }) => {
         setIsLoading(false);
       }
     }
-  }, [url]);
+  }, [url, startTimeUpdate, stopTimeUpdate, progressAnim]);
 
   const togglePlayback = () => {
     if (!sound) return;
 
     if (isPlaying) {
-      sound.pause(() => setIsPlaying(false));
+      sound.pause(() => {
+        setIsPlaying(false);
+        stopTimeUpdate();
+      });
     } else {
       setIsPlaying(true);
       sound.play((success: boolean) => {
         if (!success) {
           console.error('Playback failed');
           setError('Playback failed');
+          setIsPlaying(false);
         }
-        setIsPlaying(false);
       });
+      startTimeUpdate(sound);
     }
+  };
+
+  const handleSeek = (locationX: number) => {
+    if (!sound || isLoading || progressBarWidth === 0) return;
+
+    setIsSeeking(true);
+    const position = Math.max(0, Math.min(1, locationX / progressBarWidth));
+    const seekTime = position * duration;
+
+    // Update UI immediately
+    setCurrentTime(seekTime);
+    progressAnim.setValue(position);
+
+    // Perform the seek
+    sound.setCurrentTime(seekTime);
+    setIsSeeking(false);
+    if (isPlaying) {
+      startTimeUpdate(sound);
+    }
+  };
+
+  const handleProgressBarLayout = (event: { nativeEvent: { layout: LayoutRectangle } }) => {
+    setProgressBarWidth(event.nativeEvent.layout.width);
   };
 
   if (!url) {
@@ -83,26 +167,61 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title} numberOfLines={1}>
-        {title || 'Audio Track'}
-      </Text>
-      
+      {title && (
+        <TouchableOpacity onPress={onTitlePress}>
+          <View style={styles.trackInfo}>
+            <Text style={styles.title} numberOfLines={1}>
+              {title}
+            </Text>
+            <Text style={styles.artist} numberOfLines={1}>
+              {subtitle}
+            </Text>
+          </View>
+
+        </TouchableOpacity>
+      )}
+
       {error ? (
         <Text style={styles.error}>{error}</Text>
       ) : (
-        <TouchableOpacity
-          style={styles.playButton}
-          onPress={togglePlayback}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.playButtonText}>
-              {isPlaying ? '⏸️ Pause' : '▶️ Play'}
-            </Text>
-          )}
-        </TouchableOpacity>
+        <View style={styles.controls}>
+          <TouchableOpacity
+            style={styles.playButton}
+            onPress={togglePlayback}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.playButtonText}>
+                {isPlaying ? '⏸️' : '▶️'}
+              </Text>
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.progressContainer}>
+            <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
+            <Pressable
+              style={styles.progressBar}
+              onLayout={handleProgressBarLayout}
+              onPress={(e) => handleSeek(e.nativeEvent.locationX)}
+            >
+              <View style={styles.progressBackground} />
+              <Animated.View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: progressAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0%', '100%']
+                    })
+                  }
+                ]}
+              />
+            </Pressable>
+            <Text style={styles.timeText}>{formatTime(duration)}</Text>
+          </View>
+        </View>
       )}
     </View>
   );
@@ -110,31 +229,70 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#f5f5f5',
-    padding: 16,
-    borderRadius: 8,
-    marginVertical: 8,
+    width: '100%',
+  },
+  controls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  playButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1DB954',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  playButtonText: {
+    color: '#fff',
+    fontSize: 18,
+  },
+  progressContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  timeText: {
+    color: '#b3b3b3',
+    fontSize: 12,
+    minWidth: 35,
+  },
+  progressBar: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#404040',
+    borderRadius: 2,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  progressBackground: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#404040',
+  },
+  progressFill: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#1DB954',
+  },
+  error: {
+    color: '#ff4444',
+    textAlign: 'center',
   },
   title: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
-  },
-  playButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 4,
-    alignItems: 'center',
-  },
-  playButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
-  error: {
-    color: 'red',
-    textAlign: 'center',
+  trackInfo: {
+    marginBottom: 8,
+  },
+  artist: {
+    color: '#b3b3b3',
+    fontSize: 14,
   },
 });
 
