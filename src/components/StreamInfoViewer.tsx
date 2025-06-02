@@ -8,6 +8,7 @@ import {
 import NewPipeService from '../services/NewPipeService';
 import type { StreamInfo, AudioStream } from '../types/newpipe';
 import { BackIcon } from './PlayerIcons';
+import { RenderHTML } from 'react-native-render-html';
 
 interface StreamInfoViewerProps {
     initialUrl?: string;
@@ -15,8 +16,8 @@ interface StreamInfoViewerProps {
     onAudioStreamSelect?: (stream: AudioStream) => void;
 }
 
-export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({ 
-    initialUrl = '', 
+export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
+    initialUrl = '',
     onClose,
     onAudioStreamSelect,
 }) => {
@@ -40,10 +41,10 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
             setError(null);
             const info = await NewPipeService.getStreamInfo(videoUrl);
             setStreamInfo(info);
-            
+
             // Automatically select highest quality audio stream
             if (info.audioStreams && info.audioStreams.length > 0) {
-                const bestAudio = info.audioStreams.reduce((prev: AudioStream, current: AudioStream) => 
+                const bestAudio = info.audioStreams.reduce((prev: AudioStream, current: AudioStream) =>
                     prev.averageBitrate > current.averageBitrate ? prev : current
                 );
                 setSelectedAudioStream(bestAudio);
@@ -100,7 +101,10 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
                     ))}
 
                     <Text style={styles.sectionTitle}>Description</Text>
-                    <Text style={styles.description}>{streamInfo.description}</Text>
+                    <Text style={styles.description}>
+                        <RenderHTML source={{ html: streamInfo.description }} tagsStyles={{ body: { color: '#fff' } }} />
+                    </Text>
+
                 </View>
             )}
         </ScrollView>
