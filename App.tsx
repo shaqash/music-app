@@ -12,8 +12,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import NewPipeService from './src/services/NewPipeService';
+import { StorageService } from './src/services/StorageService';
 import MusicPlayer from './src/components/MusicPlayer';
 import StreamInfoViewer from './src/components/StreamInfoViewer';
+import RecentVideos from './src/components/RecentVideos';
 import type { SearchResult, StreamInfo, AudioStream } from './src/types/newpipe';
 
 function App(): React.JSX.Element {
@@ -21,6 +23,7 @@ function App(): React.JSX.Element {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
   
   // Player state
   const [currentStreamInfo, setCurrentStreamInfo] = useState<StreamInfo | null>(null);
@@ -48,6 +51,9 @@ function App(): React.JSX.Element {
     setLoadingStream(true);
     setCurrentTrackUrl(track.url);
     try {
+      // Save to recent videos
+      await StorageService.addRecentVideo(track);
+      
       const info = await NewPipeService.getStreamInfo(track.url);
       setCurrentStreamInfo(info);
       
@@ -88,17 +94,19 @@ function App(): React.JSX.Element {
     </TouchableOpacity>
   );
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#121212" />
-      
-      {showStreamInfo ? (
+  const renderMainContent = () => {
+    if (showStreamInfo) {
+      return (
         <StreamInfoViewer
           initialUrl={currentTrackUrl}
           onClose={() => setShowStreamInfo(false)}
           onAudioStreamSelect={handleAudioStreamSelect}
         />
-      ) : (
+      );
+    }
+
+    if (showSearch) {
+      return (
         <>
           <View style={styles.searchContainer}>
             <TextInput
@@ -110,6 +118,12 @@ function App(): React.JSX.Element {
               placeholderTextColor="#b3b3b3"
               returnKeyType="search"
             />
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setShowSearch(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
 
           {error && (
@@ -128,8 +142,26 @@ function App(): React.JSX.Element {
             />
           )}
         </>
-      )}
+      );
+    }
 
+    return (
+      <>
+        <TouchableOpacity
+          style={styles.searchButton}
+          onPress={() => setShowSearch(true)}
+        >
+          <Text style={styles.searchButtonText}>Search for music...</Text>
+        </TouchableOpacity>
+        <RecentVideos onVideoSelect={handleTrackSelect} />
+      </>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#121212" />
+      {renderMainContent()}
       <MusicPlayer
         streamInfo={currentStreamInfo}
         audioStream={currentAudioStream}
@@ -146,52 +178,73 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212',
   },
   searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#282828',
   },
   searchInput: {
+    flex: 1,
+    height: 40,
     backgroundColor: '#282828',
+    borderRadius: 8,
+    paddingHorizontal: 12,
     color: '#fff',
-    padding: 12,
-    borderRadius: 4,
+    marginRight: 8,
+  },
+  cancelButton: {
+    paddingHorizontal: 8,
+  },
+  cancelButtonText: {
+    color: '#1DB954',
     fontSize: 16,
+  },
+  searchButton: {
+    margin: 16,
+    padding: 12,
+    backgroundColor: '#282828',
+    borderRadius: 8,
+  },
+  searchButtonText: {
+    color: '#b3b3b3',
+    fontSize: 16,
+  },
+  errorText: {
+    color: '#ff4444',
+    padding: 16,
+  },
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
   },
   resultsList: {
     flex: 1,
   },
   resultsContent: {
-    padding: 16,
+    padding: 8,
   },
   resultItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+    padding: 8,
+    marginBottom: 8,
     backgroundColor: '#282828',
-    borderRadius: 4,
-    overflow: 'hidden',
+    borderRadius: 8,
   },
   thumbnail: {
-    width: 60,
-    height: 60,
+    width: 120,
+    height: 68,
+    borderRadius: 4,
   },
   resultTextContainer: {
     flex: 1,
-    padding: 12,
+    marginLeft: 12,
+    justifyContent: 'center',
   },
   resultTitle: {
+    fontSize: 16,
     color: '#fff',
-    fontSize: 14,
     fontWeight: '500',
-  },
-  errorText: {
-    color: '#ff4444',
-    padding: 16,
-    textAlign: 'center',
-  },
-  loader: {
-    flex: 1,
-    alignSelf: 'center',
   },
 });
 
