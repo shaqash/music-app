@@ -22,6 +22,12 @@ import org.schabi.newpipe.extractor.downloader.Downloader;
 import org.schabi.newpipe.extractor.downloader.Request;
 import org.schabi.newpipe.extractor.downloader.Response;
 import org.schabi.newpipe.extractor.MediaFormat;
+import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubeSearchQueryHandlerFactory;
+import org.schabi.newpipe.extractor.search.SearchInfo;
+import org.schabi.newpipe.extractor.search.SearchExtractor;
+import org.schabi.newpipe.extractor.InfoItem;
+import org.schabi.newpipe.extractor.stream.StreamInfoItem;
+import org.schabi.newpipe.extractor.Image;
 
 import java.io.IOException;
 import java.util.List;
@@ -29,6 +35,7 @@ import java.util.Map;
 import okhttp3.OkHttpClient;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
+import java.util.ArrayList;
 
 public class NewPipeModule extends ReactContextBaseJavaModule {
     private static ReactApplicationContext reactContext;
@@ -185,6 +192,43 @@ public class NewPipeModule extends ReactContextBaseJavaModule {
             promise.resolve(result);
         } catch (ExtractionException | IOException e) {
             promise.reject("AUDIO_EXTRACTION_ERROR", e.getMessage());
+        }
+    }
+
+    @ReactMethod
+    public void searchYoutube(String query, Promise promise) {
+        try {
+            StreamingService youtubeService = NewPipe.getService(0); // 0 is YouTube
+            YoutubeSearchQueryHandlerFactory searchHandler = YoutubeSearchQueryHandlerFactory.getInstance();
+            SearchExtractor searchExtractor = youtubeService.getSearchExtractor(query);
+            searchExtractor.fetchPage();
+            
+            SearchInfo searchInfo = SearchInfo.getInfo(searchExtractor);
+            
+            WritableArray results = Arguments.createArray();
+            searchInfo.getRelatedItems().forEach(item -> {
+                if (item instanceof StreamInfoItem) {
+                    StreamInfoItem streamItem = (StreamInfoItem) item;
+                    WritableMap resultMap = Arguments.createMap();
+                    resultMap.putString("title", streamItem.getName());
+                    resultMap.putString("url", streamItem.getUrl());
+                    
+                    // Get thumbnail URL from the stream item
+                    List<Image> thumbnails = streamItem.getThumbnails();
+                    if (!thumbnails.isEmpty()) {
+                        String thumbnailUrl = thumbnails.get(0).getUrl();
+                        if (thumbnailUrl != null && !thumbnailUrl.isEmpty()) {
+                            resultMap.putString("thumbnailUrl", thumbnailUrl);
+                        }
+                    }
+                    
+                    results.pushMap(resultMap);
+                }
+            });
+            
+            promise.resolve(results);
+        } catch (Exception e) {
+            promise.reject("SEARCH_ERROR", e.getMessage());
         }
     }
 } 

@@ -1,5 +1,5 @@
 import { NativeModules } from 'react-native';
-import type { StreamInfo } from '../types/newpipe';
+import type { StreamInfo, SearchResult } from '../types/newpipe';
 
 const { NewPipeModule } = NativeModules;
 
@@ -20,6 +20,15 @@ export class NewPipeService {
      */
     static async getVideoId(url: string): Promise<string> {
         return await NewPipeModule.getVideoId(url);
+    }
+
+    /**
+     * Search for videos on YouTube
+     * @param query The search query
+     * @returns Promise<SearchResult[]>
+     */
+    static async searchYoutube(query: string): Promise<SearchResult[]> {
+        return await NewPipeModule.searchYoutube(query);
     }
 }
 

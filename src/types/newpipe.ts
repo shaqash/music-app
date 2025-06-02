@@ -19,11 +19,18 @@ export interface StreamInfo {
     audioStreams: AudioStream[];
 }
 
+export interface SearchResult {
+    title: string;
+    url: string;
+    thumbnailUrl?: string;
+}
+
 declare module 'react-native' {
     interface NativeModulesStatic {
         NewPipeModule: {
             getStreamInfo(url: string): Promise<StreamInfo>;
             getVideoId(url: string): Promise<string>;
+            searchYoutube(query: string): Promise<SearchResult[]>;
         };
     }
 } 
