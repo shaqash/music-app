@@ -10,6 +10,7 @@ import {
   Animated,
 } from 'react-native';
 import Sound from 'react-native-sound';
+import { PlayIcon, PauseIcon } from './PlayerIcons';
 
 Sound.setCategory('Playback', true);
 
@@ -183,7 +184,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title, subtitle, onTitle
               {subtitle}
             </Text>
           </View>
-
         </TouchableOpacity>
       )}
 
@@ -199,9 +199,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title, subtitle, onTitle
             {isLoading ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text style={styles.playButtonText}>
-                {isPlaying ? '⏸️' : '▶️'}
-              </Text>
+              isPlaying ? <PauseIcon size={32} /> : <PlayIcon size={32} />
             )}
           </TouchableOpacity>
 
@@ -251,10 +249,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  playButtonText: {
-    color: '#fff',
-    fontSize: 18,
-  },
   progressContainer: {
     flex: 1,
     flexDirection: 'row',
@@ -289,7 +283,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 6,
+    marginBottom: 3,
     color: '#fff',
   },
   trackInfo: {

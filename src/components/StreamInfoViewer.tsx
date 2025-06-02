@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import NewPipeService from '../services/NewPipeService';
 import type { StreamInfo, AudioStream } from '../types/newpipe';
+import { BackIcon } from './PlayerIcons';
 
 interface StreamInfoViewerProps {
     initialUrl?: string;
@@ -67,7 +68,7 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
                     style={styles.closeButton}
                     onPress={onClose}
                 >
-                    <Text style={styles.closeButtonText}>{'<'}</Text>
+                    <BackIcon size={32} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Stream Info</Text>
             </View>
@@ -119,7 +120,7 @@ const styles = StyleSheet.create({
         borderBottomColor: '#282828',
     },
     closeButton: {
-        padding: 8,
+        paddingVertical: 6,
         marginRight: 6,
     },
     closeButtonText: {
