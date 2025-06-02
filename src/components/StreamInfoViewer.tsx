@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -8,19 +8,30 @@ import {
     ScrollView,
     ActivityIndicator,
 } from 'react-native';
-import NewPipeModule from '../services/NewPipeService';
+import NewPipeService from '../services/NewPipeService';
 import AudioPlayer from './AudioPlayer';
 import type { StreamInfo, AudioStream } from '../types/newpipe';
 
-export const StreamInfoViewer: React.FC = () => {
-    const [url, setUrl] = useState('');
+interface StreamInfoViewerProps {
+    initialUrl?: string;
+}
+
+export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({ initialUrl = '' }) => {
+    const [url, setUrl] = useState(initialUrl);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [streamInfo, setStreamInfo] = useState<StreamInfo | null>(null);
     const [selectedAudioStream, setSelectedAudioStream] = useState<AudioStream | null>(null);
 
-    const fetchStreamInfo = async () => {
-        if (!url) {
+    useEffect(() => {
+        if (initialUrl) {
+            setUrl(initialUrl);
+            fetchStreamInfo(initialUrl);
+        }
+    }, [initialUrl]);
+
+    const fetchStreamInfo = async (videoUrl: string) => {
+        if (!videoUrl) {
             setError('Please enter a URL');
             return;
         }
@@ -28,7 +39,7 @@ export const StreamInfoViewer: React.FC = () => {
         try {
             setLoading(true);
             setError(null);
-            const info = await NewPipeModule.getStreamInfo(url);
+            const info = await NewPipeService.getStreamInfo(videoUrl);
             setStreamInfo(info);
             
             // Automatically select highest quality audio stream
@@ -57,7 +68,7 @@ export const StreamInfoViewer: React.FC = () => {
                 />
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={fetchStreamInfo}
+                    onPress={() => fetchStreamInfo(url)}
                     disabled={loading}
                 >
                     {loading ? (

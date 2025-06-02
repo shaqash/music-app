@@ -12,7 +12,11 @@ import {
 import NewPipeService from '../services/NewPipeService';
 import type { SearchResult } from '../types/newpipe';
 
-export const MusicVideoSearch: React.FC = () => {
+interface MusicVideoSearchProps {
+  onVideoSelect: (url: string) => void;
+}
+
+export const MusicVideoSearch: React.FC<MusicVideoSearchProps> = ({ onVideoSelect }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -35,7 +39,10 @@ export const MusicVideoSearch: React.FC = () => {
   };
 
   const renderItem = ({ item }: { item: SearchResult }) => (
-    <TouchableOpacity style={styles.resultItem}>
+    <TouchableOpacity 
+      style={styles.resultItem}
+      onPress={() => onVideoSelect(item.url)}
+    >
       {item.thumbnailUrl && (
         <Image
           source={{ uri: item.thumbnailUrl }}

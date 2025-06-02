@@ -12,6 +12,12 @@ import { MusicVideoSearch } from './src/components/MusicVideoSearch';
 
 function App(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<'search' | 'info'>('search');
+  const [selectedVideoUrl, setSelectedVideoUrl] = useState<string>('');
+
+  const handleVideoSelect = (url: string) => {
+    setSelectedVideoUrl(url);
+    setActiveTab('info');
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -36,7 +42,11 @@ function App(): React.JSX.Element {
         </TouchableOpacity>
       </View>
 
-      {activeTab === 'search' ? <MusicVideoSearch /> : <StreamInfoViewer />}
+      {activeTab === 'search' ? (
+        <MusicVideoSearch onVideoSelect={handleVideoSelect} />
+      ) : (
+        <StreamInfoViewer initialUrl={selectedVideoUrl} />
+      )}
     </SafeAreaView>
   );
 }
