@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
-import TrackPlayer, { 
+import TrackPlayer, {
   Capability,
   AppKilledPlaybackBehavior,
-  Event,
 } from '@weights-ai/react-native-track-player';
 
 export const setupPlayer = async () => {
@@ -56,4 +55,4 @@ export const useTrackPlayerSetup = () => {
       TrackPlayer.reset();
     };
   }, []);
-}; 
+};

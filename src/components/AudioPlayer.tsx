@@ -1,30 +1,14 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
-  View,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
   ActivityIndicator,
   Pressable,
-  NativeSyntheticEvent,
-  NativeTouchEvent
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import TrackPlayer, {
-  useTrackPlayerEvents,
-  usePlaybackState,
-  useProgress,
-  Event,
-  State,
-} from '@weights-ai/react-native-track-player';
-import { PlayIcon, PauseIcon } from './PlayerIcons';
-import { usePlayNextTrack } from '../hooks/usePlayNextTrack';
-
-interface AudioPlayerProps {
-  url?: string;
-  title?: string;
-  subtitle?: string;
-  onTitlePress?: () => void;
-}
+import { useAudioControls } from '../hooks/useAudioControls';
+import { PauseIcon, PlayIcon } from './PlayerIcons';
 
 const formatTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
@@ -32,82 +16,29 @@ const formatTime = (seconds: number): string => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title, subtitle, onTitlePress }) => {
-  const playbackState = usePlaybackState();
-  const progress = useProgress();
-  const { playNextTrack } = usePlayNextTrack();
-  const progressBarRef = useRef<View>(null);
-
-  // Handle track player events
-  useTrackPlayerEvents([Event.PlaybackError], (event) => {
-    if (event.type === Event.PlaybackError) {
-      console.error('Playback error:', event);
-    }
-  });
-
-  useEffect(() => {
-    if (!url) return;
-
-    const setupTrack = async () => {
-      try {
-        await TrackPlayer.reset();
-        await TrackPlayer.add({
-          url,
-          title,
-          artist: subtitle,
-        });
-        await TrackPlayer.play();
-      } catch (error) {
-        console.error('Error setting up track:', error);
-      }
-    };
-
-    setupTrack();
-  }, [url, title, subtitle]);
-
-  const togglePlayback = async () => {
-    const currentState = await TrackPlayer.getState();
-    if (currentState === State.Playing) {
-      await TrackPlayer.pause();
-    } else {
-      await TrackPlayer.play();
-    }
-  };
-
-  const handleSeek = async (locationX: number, width: number) => {
-    if (!progress.duration) return;
-
-    const position = Math.max(0, Math.min(1, locationX / width));
-    const seekTime = position * progress.duration;
-    await TrackPlayer.seekTo(seekTime);
-  };
-
-  const handleProgressPress = (e: NativeSyntheticEvent<NativeTouchEvent>) => {
-    if (progressBarRef.current) {
-      progressBarRef.current.measure((_x: number, _y: number, width: number) => {
-        handleSeek(e.nativeEvent.locationX, width);
-      });
-    }
-  };
-
-  if (!url) {
-    return null;
-  }
-
-  const isPlaying = playbackState.state === State.Playing;
-  const isLoading = playbackState.state === State.Connecting || playbackState.state === State.Buffering;
+const AudioPlayer: React.FC = () => {
+  const {
+    currentStreamInfo,
+    setShowStreamInfo,
+    togglePlayback,
+    handleProgressPress,
+    progressBarRef,
+    progress,
+    isLoading,
+    isPlaying,
+  } = useAudioControls();
 
   return (
     <View style={styles.container}>
-      {title && (
-        <TouchableOpacity onPress={onTitlePress}>
+      {currentStreamInfo?.title && (
+        <TouchableOpacity onPress={() => setShowStreamInfo(true)}>
           <View style={styles.trackInfo}>
             <Text style={styles.title} numberOfLines={1}>
-              {title}
+              {currentStreamInfo.title}
             </Text>
-            {subtitle && (
+            {currentStreamInfo.uploaderName && (
               <Text style={styles.artist} numberOfLines={1}>
-                {subtitle}
+                {currentStreamInfo.uploaderName}
               </Text>
             )}
           </View>
@@ -211,4 +142,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AudioPlayer; 
+export default AudioPlayer;
