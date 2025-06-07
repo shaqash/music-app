@@ -74,7 +74,7 @@ export const RecentVideos: React.FC<RecentVideosProps> = ({ onVideoSelect }) => 
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Recent Videos</Text>
+      <Text style={styles.sectionTitle}>Recent</Text>
       <FlatList
         data={recentVideos}
         renderItem={renderVideo}

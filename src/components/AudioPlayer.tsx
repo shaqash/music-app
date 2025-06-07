@@ -54,7 +54,7 @@ const AudioPlayer: React.FC = () => {
           {isLoading ? (
             <ActivityIndicator color="white" />
           ) : (
-            isPlaying ? <PauseIcon size={32} /> : <PlayIcon size={32} />
+            isPlaying ? <PauseIcon size={42} /> : <PlayIcon size={42} />
           )}
         </TouchableOpacity>
 
@@ -95,7 +95,6 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#1DB954',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -113,9 +112,9 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     flex: 1,
-    height: 6,
+    height: 8,
     backgroundColor: '#404040',
-    borderRadius: 3,
+    borderRadius: 12,
     overflow: 'hidden',
     position: 'relative',
   },

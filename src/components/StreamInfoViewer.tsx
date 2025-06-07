@@ -4,11 +4,15 @@ import {
   Text, TouchableOpacity,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import NewPipeService from '../services/NewPipeService';
 import type { StreamInfo, AudioStream } from '../types/newpipe';
 import { BackIcon } from './PlayerIcons';
 import { RenderHTML } from 'react-native-render-html';
+
+const { height } = Dimensions.get('window');
 
 interface StreamInfoViewerProps {
     initialUrl?: string;
@@ -24,6 +28,7 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [streamInfo, setStreamInfo] = useState<StreamInfo | null>(null);
   const [selectedAudioStream, setSelectedAudioStream] = useState<AudioStream | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (initialUrl) {
@@ -39,6 +44,7 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
 
     try {
       setError(null);
+      setLoading(true);
       const info = await NewPipeService.getStreamInfo(videoUrl);
       setStreamInfo(info);
 
@@ -52,6 +58,7 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch stream info');
     } finally {
+      setLoading(false);
     }
   };
 
@@ -63,7 +70,7 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.closeButton}
@@ -74,40 +81,48 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
         <Text style={styles.headerTitle}>Stream Info</Text>
       </View>
 
-      {error && (
-        <Text style={styles.error}>{error}</Text>
-      )}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+      >
+        {error && (
+          <Text style={styles.error}>{error}</Text>
+        )}
 
-      {streamInfo && (
-        <View style={styles.infoContainer}>
-          <Text style={styles.title}>{streamInfo.title}</Text>
-          <Text style={styles.uploader}>By {streamInfo.uploaderName}</Text>
-          <Text style={styles.views}>{streamInfo.viewCount.toLocaleString()} views</Text>
+        {loading ? (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color="#1DB954" />
+          </View>
+        ) : streamInfo ? (
+          <View style={styles.infoContainer}>
+            <Text style={styles.title}>{streamInfo.title}</Text>
+            <Text style={styles.uploader}>By {streamInfo.uploaderName}</Text>
+            <Text style={styles.views}>{streamInfo.viewCount.toLocaleString()} views</Text>
 
-          <Text style={styles.sectionTitle}>Available Audio Streams</Text>
-          {streamInfo.audioStreams.map((stream, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.streamItem,
-                selectedAudioStream?.url === stream.url && styles.selectedStream,
-              ]}
-              onPress={() => handleStreamSelect(stream)}
-            >
-              <Text style={styles.streamText}>
-                {stream.format}
-              </Text>
-            </TouchableOpacity>
-          ))}
+            <Text style={styles.sectionTitle}>Available Audio Streams</Text>
+            {streamInfo.audioStreams.map((stream, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.streamItem,
+                  selectedAudioStream?.url === stream.url && styles.selectedStream,
+                ]}
+                onPress={() => handleStreamSelect(stream)}
+              >
+                <Text style={styles.streamText}>
+                  {stream.format} - {stream.averageBitrate}kbps
+                </Text>
+              </TouchableOpacity>
+            ))}
 
-          <Text style={styles.sectionTitle}>Description</Text>
-          <Text style={styles.description}>
-            <RenderHTML source={{ html: streamInfo.description }} tagsStyles={{ body: { color: '#fff' } }} />
-          </Text>
-
-        </View>
-      )}
-    </ScrollView>
+            <Text style={styles.sectionTitle}>Description</Text>
+            <Text style={styles.description}>
+              <RenderHTML source={{ html: streamInfo.description }} tagsStyles={{ body: { color: '#fff' } }} />
+            </Text>
+          </View>
+        ) : null}
+      </ScrollView>
+    </View>
   );
 };
 
@@ -122,6 +137,12 @@ const styles = StyleSheet.create({
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#282828',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    paddingBottom: height * 0.15, // Add padding at the bottom to account for the NextUp component
   },
   closeButton: {
     paddingVertical: 6,
@@ -207,6 +228,12 @@ const styles = StyleSheet.create({
   streamText: {
     fontSize: 14,
     color: '#fff',
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: height * 0.7,
   },
 });
 
