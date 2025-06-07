@@ -34,4 +34,4 @@ declare module 'react-native' {
             getRelatedVideos(url: string): Promise<SearchResult[]>;
         };
     }
-} 
+}

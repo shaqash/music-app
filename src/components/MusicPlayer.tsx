@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
 import AudioPlayer from './AudioPlayer';
@@ -20,7 +19,6 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
   streamInfo,
   audioStream,
   isLoading,
-  onStreamInfoPress,
 }) => {
   if (isLoading) {
     return (
@@ -40,12 +38,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
 
   return (
     <View style={styles.container}>
-      <AudioPlayer
-        url={audioStream.url}
-        title={streamInfo.title}
-        subtitle={streamInfo.uploaderName}
-        onTitlePress={onStreamInfoPress}
-      />
+      <AudioPlayer />
     </View>
   );
 };
@@ -69,4 +62,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MusicPlayer; 
+export default MusicPlayer;

@@ -97,4 +97,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SearchResult; 
+export default SearchResult;

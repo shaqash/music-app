@@ -10,7 +10,7 @@ export const useSearch = () => {
   } = useAppContext();
 
   const handleSearch = async () => {
-    if (!query.trim()) return;
+    if (!query.trim()) {return;}
 
     setLoading(true);
     setError(null);
@@ -25,4 +25,4 @@ export const useSearch = () => {
   };
 
   return { handleSearch };
-}; 
+};

@@ -20,13 +20,13 @@ interface IconProps {
 }
 
 export const PlayIcon: React.FC<IconProps> = ({ size = 24 }) => (
-    <SvgXml xml={playIconXml} width={size} height={size} />
+  <SvgXml xml={playIconXml} width={size} height={size} />
 );
 
 export const PauseIcon: React.FC<IconProps> = ({ size = 24 }) => (
-    <SvgXml xml={pauseIconXml} width={size} height={size} />
+  <SvgXml xml={pauseIconXml} width={size} height={size} />
 );
 
 export const BackIcon: React.FC<IconProps> = ({ size = 24 }) => (
-    <SvgXml xml={backIconXml} width={size} height={size} />
-); 
+  <SvgXml xml={backIconXml} width={size} height={size} />
+);
