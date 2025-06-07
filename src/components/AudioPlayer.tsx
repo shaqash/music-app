@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -6,14 +6,18 @@ import {
   StyleSheet,
   ActivityIndicator,
   Pressable,
-  LayoutRectangle,
-  Animated,
+  NativeSyntheticEvent,
+  NativeTouchEvent
 } from 'react-native';
-import Sound from 'react-native-sound';
+import TrackPlayer, {
+  useTrackPlayerEvents,
+  usePlaybackState,
+  useProgress,
+  Event,
+  State,
+} from '@weights-ai/react-native-track-player';
 import { PlayIcon, PauseIcon } from './PlayerIcons';
 import { usePlayNextTrack } from '../hooks/usePlayNextTrack';
-
-Sound.setCategory('Playback', true);
 
 interface AudioPlayerProps {
   url?: string;
@@ -29,151 +33,69 @@ const formatTime = (seconds: number): string => {
 };
 
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title, subtitle, onTitlePress }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [sound, setSound] = useState<Sound | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [progressBarWidth, setProgressBarWidth] = useState(0);
-  const [isSeeking, setIsSeeking] = useState(false);
-  const progressAnim = useRef(new Animated.Value(0)).current;
-  const intervalRef = useRef<number | null>(null);
+  const playbackState = usePlaybackState();
+  const progress = useProgress();
   const { playNextTrack } = usePlayNextTrack();
+  const progressBarRef = useRef<View>(null);
 
-  const startTimeUpdate = useCallback((soundObj: Sound) => {
-    if (intervalRef.current !== null) {
-      clearInterval(intervalRef.current);
+  // Handle track player events
+  useTrackPlayerEvents([Event.PlaybackError], (event) => {
+    if (event.type === Event.PlaybackError) {
+      console.error('Playback error:', event);
     }
-    intervalRef.current = setInterval(() => {
-      if (!isSeeking) {
-        soundObj.getCurrentTime((seconds: number) => {
-          setCurrentTime(seconds);
-          const progress = seconds / soundObj.getDuration();
-          Animated.timing(progressAnim, {
-            toValue: progress,
-            duration: 250,
-            useNativeDriver: false,
-          }).start();
-        });
-      }
-    }, 250) as unknown as number;
-  }, [progressAnim, isSeeking]);
-
-  const stopTimeUpdate = useCallback(() => {
-    if (intervalRef.current !== null) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }, []);
+  });
 
   useEffect(() => {
-    return () => {
-      stopTimeUpdate();
-      if (sound) {
-        sound.release();
+    if (!url) return;
+
+    const setupTrack = async () => {
+      try {
+        await TrackPlayer.reset();
+        await TrackPlayer.add({
+          url,
+          title,
+          artist: subtitle,
+        });
+        await TrackPlayer.play();
+      } catch (error) {
+        console.error('Error setting up track:', error);
       }
     };
-  }, [sound, stopTimeUpdate]);
 
-  useEffect(() => {
-    if (url) {
-      if (sound) {
-        stopTimeUpdate();
-        sound.release();
-      }
+    setupTrack();
+  }, [url, title, subtitle]);
 
-      setIsLoading(true);
-      setError(null);
-      setCurrentTime(0);
-      setDuration(0);
-      progressAnim.setValue(0);
-
-      try {
-        const newSound = new Sound(url, undefined, (error: Error | null) => {
-          setIsLoading(false);
-          if (error) {
-            console.error('Failed to load sound:', error);
-            setError('Failed to load sound');
-            return;
-          }
-          setSound(newSound);
-          setIsPlaying(true);
-          setDuration(newSound.getDuration());
-
-          // Wait a brief moment for the sound to be fully ready
-          setTimeout(() => {
-            startTimeUpdate(newSound);
-
-            // Auto-play when loaded
-            newSound.play((success: boolean) => {
-              if (!success) {
-                console.error('Playback failed');
-                setError('Playback failed');
-                setIsPlaying(false);
-                stopTimeUpdate();
-              }
-            });
-          }, 100);
-        });
-
-        // Ensure we don't loop
-        newSound.setNumberOfLoops(0);
-      } catch (err) {
-        console.error('Error creating Sound instance:', err);
-        setError('Failed to initialize audio player');
-        setIsLoading(false);
-      }
-    }
-  }, [url, startTimeUpdate, stopTimeUpdate, progressAnim]);
-
-  const togglePlayback = () => {
-    if (!sound) return;
-
-    if (isPlaying) {
-      sound.pause(() => {
-        setIsPlaying(false);
-        stopTimeUpdate();
-      });
+  const togglePlayback = async () => {
+    const currentState = await TrackPlayer.getState();
+    if (currentState === State.Playing) {
+      await TrackPlayer.pause();
     } else {
-      setIsPlaying(true);
-      sound.play((success: boolean) => {
-        if (!success) {
-          console.error('Playback failed');
-          setError('Playback failed');
-          setIsPlaying(false);
-        }
+      await TrackPlayer.play();
+    }
+  };
+
+  const handleSeek = async (locationX: number, width: number) => {
+    if (!progress.duration) return;
+
+    const position = Math.max(0, Math.min(1, locationX / width));
+    const seekTime = position * progress.duration;
+    await TrackPlayer.seekTo(seekTime);
+  };
+
+  const handleProgressPress = (e: NativeSyntheticEvent<NativeTouchEvent>) => {
+    if (progressBarRef.current) {
+      progressBarRef.current.measure((_x: number, _y: number, width: number) => {
+        handleSeek(e.nativeEvent.locationX, width);
       });
-      startTimeUpdate(sound);
     }
-  };
-
-  const handleSeek = (locationX: number) => {
-    if (!sound || isLoading || progressBarWidth === 0) return;
-
-    setIsSeeking(true);
-    const position = Math.max(0, Math.min(1, locationX / progressBarWidth));
-    const seekTime = position * duration;
-
-    // Update UI immediately
-    setCurrentTime(seekTime);
-    progressAnim.setValue(position);
-
-    // Perform the seek
-    sound.setCurrentTime(seekTime);
-    setIsSeeking(false);
-    if (isPlaying) {
-      startTimeUpdate(sound);
-    }
-  };
-
-  const handleProgressBarLayout = (event: { nativeEvent: { layout: LayoutRectangle } }) => {
-    setProgressBarWidth(event.nativeEvent.layout.width);
   };
 
   if (!url) {
     return null;
   }
+
+  const isPlaying = playbackState.state === State.Playing;
+  const isLoading = playbackState.state === State.Connecting || playbackState.state === State.Buffering;
 
   return (
     <View style={styles.container}>
@@ -192,46 +114,39 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ url, title, subtitle, onTitle
         </TouchableOpacity>
       )}
 
-      {error ? (
-        <Text style={styles.error}>{error}</Text>
-      ) : (
-        <View style={styles.controls}>
-          <TouchableOpacity
-            style={styles.playButton}
-            onPress={togglePlayback}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              isPlaying ? <PauseIcon size={32} /> : <PlayIcon size={32} />
-            )}
-          </TouchableOpacity>
+      <View style={styles.controls}>
+        <TouchableOpacity
+          style={styles.playButton}
+          onPress={togglePlayback}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            isPlaying ? <PauseIcon size={32} /> : <PlayIcon size={32} />
+          )}
+        </TouchableOpacity>
 
-          <View style={styles.progressContainer}>
-            <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
-            <Pressable
-              style={styles.progressBar}
-              onLayout={handleProgressBarLayout}
-              onPress={(e) => handleSeek(e.nativeEvent.locationX)}
-            >
-              <View style={styles.progressBackground} />
-              <Animated.View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: progressAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ['0%', '100%']
-                    })
-                  }
-                ]}
-              />
-            </Pressable>
-            <Text style={styles.timeText}>{formatTime(duration)}</Text>
-          </View>
+        <View style={styles.progressContainer}>
+          <Text style={styles.timeText}>{formatTime(progress.position)}</Text>
+          <Pressable
+            ref={progressBarRef}
+            style={styles.progressBar}
+            onPress={handleProgressPress}
+          >
+            <View style={styles.progressBackground} />
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width: `${(progress.position / (progress.duration || 1)) * 100}%`,
+                },
+              ]}
+            />
+          </Pressable>
+          <Text style={styles.timeText}>{formatTime(progress.duration)}</Text>
         </View>
-      )}
+      </View>
     </View>
   );
 };
@@ -280,10 +195,6 @@ const styles = StyleSheet.create({
   progressFill: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#1DB954',
-  },
-  error: {
-    color: '#ff4444',
-    textAlign: 'center',
   },
   title: {
     fontSize: 16,

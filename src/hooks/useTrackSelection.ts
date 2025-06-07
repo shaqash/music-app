@@ -1,6 +1,7 @@
 import { useAppContext } from '../context/AppContext';
 import NewPipeService from '../services/NewPipeService';
 import { StorageService } from '../services/StorageService';
+import TrackPlayer from '@weights-ai/react-native-track-player';
 import type { SearchResult, AudioStream } from '../types/newpipe';
 
 export const useTrackSelection = () => {
@@ -10,6 +11,7 @@ export const useTrackSelection = () => {
     setCurrentAudioStream,
     setLoadingStream,
     setError,
+    currentStreamInfo,
   } = useAppContext();
 
   const handleTrackSelect = async (track: SearchResult) => {
@@ -36,8 +38,20 @@ export const useTrackSelection = () => {
     }
   };
 
-  const handleAudioStreamSelect = (stream: AudioStream) => {
+  const handleAudioStreamSelect = async (stream: AudioStream) => {
     setCurrentAudioStream(stream);
+    try {
+      await TrackPlayer.reset();
+      await TrackPlayer.add({
+        url: stream.url,
+        title: currentStreamInfo?.title || 'Unknown Title',
+        artist: currentStreamInfo?.uploaderName || 'Unknown Artist',
+      });
+      await TrackPlayer.play();
+    } catch (error) {
+      console.error('Error setting up track:', error);
+      setError('Failed to play audio stream');
+    }
   };
 
   return { handleTrackSelect, handleAudioStreamSelect };
