@@ -12,17 +12,22 @@ export const setupPlayer = async () => {
 
     await TrackPlayer.updateOptions({
       android: {
-        appKilledPlaybackBehavior: AppKilledPlaybackBehavior.StopPlaybackAndRemoveNotification,
+        appKilledPlaybackBehavior: AppKilledPlaybackBehavior.ContinuePlayback,
       },
       capabilities: [
         Capability.Play,
         Capability.Pause,
         Capability.SeekTo,
         Capability.Stop,
+        Capability.Skip,
+        Capability.SkipToNext,
+        Capability.SkipToPrevious,
       ],
       compactCapabilities: [
         Capability.Play,
         Capability.Pause,
+        Capability.SkipToNext,
+        Capability.SkipToPrevious,
       ],
       progressUpdateEventInterval: 1,
     });

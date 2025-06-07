@@ -10,9 +10,11 @@ import {
   NativeSyntheticEvent,
   NativeTouchEvent,
   View,
+  DeviceEventEmitter,
 } from 'react-native';
 import { useAppContext } from '../context/AppContext';
 import { usePlayNextTrack } from './usePlayNextTrack';
+import { PLAYBACK_NEXT, PLAYBACK_PREVIOUS } from '../services/TrackPlayerService';
 
 export const useAudioControls = () => {
   const playbackState = usePlaybackState();
@@ -34,6 +36,23 @@ export const useAudioControls = () => {
       playNextTrack();
     }
   });
+
+  // Handle remote control events
+  useEffect(() => {
+    const nextSubscription = DeviceEventEmitter.addListener(PLAYBACK_NEXT, () => {
+      playNextTrack();
+    });
+
+    const previousSubscription = DeviceEventEmitter.addListener(PLAYBACK_PREVIOUS, () => {
+      // TODO: Implement previous track functionality
+      console.log('Previous track not implemented yet');
+    });
+
+    return () => {
+      nextSubscription.remove();
+      previousSubscription.remove();
+    };
+  }, [playNextTrack]);
 
   useEffect(() => {
     if (!currentAudioStream?.url) { return; }
