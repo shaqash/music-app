@@ -57,7 +57,7 @@ Started building app using Cursor Pro free trial. All code gen was done using cl
 
 ## Day 2
 
-> This was only half a day, due to free trial ending. Did not decide yet rather to pay or not.
+> This was only half a day, due to free trial ending. Did not decide yet whether to pay or not.
 
 Started by setting rules in cursor so the code would end up cleaner. Not sure if it listened to the rules or not.
 
