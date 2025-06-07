@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
@@ -29,11 +28,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
   }
 
   if (!streamInfo || !audioStream) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.noTrackText}>No track selected</Text>
-      </View>
-    );
+    return null;
   }
 
   return (

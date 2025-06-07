@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   playerContainer: {
-    backgroundColor: '#282828',
+    backgroundColor: 'rgba(26, 26, 26, 0.9)',
     paddingBottom: Platform.OS === 'android' ? 18 : 0,
   },
   contentContainer: {

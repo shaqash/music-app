@@ -52,7 +52,7 @@ export const NextUpQueue: React.FC = () => {
       <TouchableOpacity onPress={toggleCollapse} style={styles.headerContainer}>
         <Text style={styles.title}>Next Up</Text>
         <Animated.Text style={[styles.collapseIcon, { transform: [{ rotate: spin }] }]}>
-                    ▲
+        𝅉
         </Animated.Text>
       </TouchableOpacity>
       {!isCollapsed && (
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   },
   collapseIcon: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 28,
   },
   listContent: {
     padding: 12,
