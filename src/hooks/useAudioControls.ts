@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { useAppContext } from '../context/AppContext';
+import { usePlayNextTrack } from './usePlayNextTrack';
 
 export const useAudioControls = () => {
   const playbackState = usePlaybackState();
@@ -22,11 +23,15 @@ export const useAudioControls = () => {
     currentStreamInfo,
     setShowStreamInfo,
   } = useAppContext();
+  const { playNextTrack } = usePlayNextTrack();
 
   // Handle track player events
-  useTrackPlayerEvents([Event.PlaybackError], (event) => {
+  useTrackPlayerEvents([Event.PlaybackError, Event.PlaybackQueueEnded], (event) => {
     if (event.type === Event.PlaybackError) {
       console.error('Playback error:', event);
+    } else if (event.type === Event.PlaybackQueueEnded) {
+      // Auto-play next track when current track ends
+      playNextTrack();
     }
   });
 
