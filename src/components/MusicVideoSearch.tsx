@@ -23,7 +23,7 @@ export const MusicVideoSearch: React.FC<MusicVideoSearchProps> = ({ onVideoSelec
   const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async () => {
-    if (!query.trim()) return;
+    if (!query.trim()) {return;}
 
     setLoading(true);
     setError(null);
@@ -39,7 +39,7 @@ export const MusicVideoSearch: React.FC<MusicVideoSearchProps> = ({ onVideoSelec
   };
 
   const renderItem = ({ item }: { item: SearchResult }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.resultItem}
       onPress={() => onVideoSelect(item.url)}
     >
@@ -163,4 +163,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MusicVideoSearch; 
+export default MusicVideoSearch;
