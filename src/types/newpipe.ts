@@ -15,6 +15,7 @@ export interface StreamInfo {
     uploaderName: string;
     description: string;
     viewCount: number;
+    thumbnailUrl?: string;
     videoStreams: VideoStream[];
     audioStreams: AudioStream[];
 }

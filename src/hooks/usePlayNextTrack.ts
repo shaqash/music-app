@@ -8,10 +8,7 @@ export const usePlayNextTrack = () => {
   const { relatedTracks } = useRelatedTracks(currentTrackUrl);
   const { handleTrackSelect } = useTrackSelection();
 
-  console.log('relatedTracks1', relatedTracks);
-
   const playNextTrack = useCallback(() => {
-    console.log('relatedTracks2', relatedTracks);
     if (relatedTracks.length > 0) {
       handleTrackSelect(relatedTracks[0]);
     }

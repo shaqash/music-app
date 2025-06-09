@@ -46,6 +46,7 @@ export const useTrackSelection = () => {
         url: stream.url,
         title: currentStreamInfo?.title || 'Unknown Title',
         artist: currentStreamInfo?.uploaderName || 'Unknown Artist',
+        artwork: currentStreamInfo?.thumbnailUrl || '',
       });
       await TrackPlayer.play();
     } catch (error) {

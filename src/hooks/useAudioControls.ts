@@ -64,6 +64,7 @@ export const useAudioControls = () => {
           url: currentAudioStream.url,
           title: currentStreamInfo?.title,
           artist: currentStreamInfo?.uploaderName,
+          artwork: currentStreamInfo?.thumbnailUrl,
         });
         await TrackPlayer.play();
       } catch (error) {

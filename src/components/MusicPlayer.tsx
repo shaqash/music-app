@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import AudioPlayer from './AudioPlayer';
 import type { StreamInfo, AudioStream } from '../types/newpipe';
+import { accentColor } from '../theme/colors';
 
 interface MusicPlayerProps {
   streamInfo: StreamInfo | null;
@@ -22,7 +23,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="small" color="#1DB954" />
+        <ActivityIndicator size="small" color={accentColor} />
       </View>
     );
   }

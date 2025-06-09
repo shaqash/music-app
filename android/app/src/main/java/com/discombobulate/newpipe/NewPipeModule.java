@@ -105,6 +105,14 @@ public class NewPipeModule extends ReactContextBaseJavaModule {
             result.putString("description", streamInfo.getDescription().getContent());
             result.putInt("viewCount", (int) streamInfo.getViewCount());
             
+            List<Image> thumbnails = streamInfo.getThumbnails();
+            if (!thumbnails.isEmpty()) {
+                String thumbnailUrl = thumbnails.get(0).getUrl();
+                if (thumbnailUrl != null && !thumbnailUrl.isEmpty()) {
+                    result.putString("thumbnailUrl", thumbnailUrl);
+                }
+            }
+            
             // Get video streams
             WritableArray videoStreams = Arguments.createArray();
             for (VideoStream stream : streamInfo.getVideoStreams()) {

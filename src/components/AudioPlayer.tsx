@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useAudioControls } from '../hooks/useAudioControls';
 import { PauseIcon, PlayIcon } from './PlayerIcons';
+import { accentColor } from '../theme/colors';
 
 const formatTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
@@ -124,7 +125,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#1DB954',
+    backgroundColor: accentColor,
   },
   title: {
     fontSize: 16,

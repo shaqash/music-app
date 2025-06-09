@@ -12,7 +12,6 @@ import { AppProvider } from './src/context/AppContext';
 import MusicPlayer from './src/components/MusicPlayer';
 import MainContent from './src/components/MainContent';
 import { useAppContext } from './src/context/AppContext';
-import NextUpQueue from './src/components/NextUpQueue';
 import { useTrackPlayerSetup } from './src/hooks/useTrackPlayer';
 
 const { height } = Dimensions.get('window');
@@ -26,7 +25,6 @@ function AppContent(): React.JSX.Element {
     showStreamInfo,
   } = useAppContext();
 
-  // Initialize track player once at app startup
   useTrackPlayerSetup();
 
   const slideAnim = React.useRef(new Animated.Value(height)).current;
@@ -47,7 +45,7 @@ function AppContent(): React.JSX.Element {
           <View
             style={styles.queueContainer}
           >
-            <NextUpQueue />
+            {/* <NextUpQueue /> */}
           </View>
         )}
         <MusicPlayer

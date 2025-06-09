@@ -1,18 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  View,
-  Text, TouchableOpacity,
-  StyleSheet,
-  ScrollView,
   ActivityIndicator,
   Dimensions,
+  Image,
+  StyleSheet,
+  Text, TouchableOpacity,
+  View,
 } from 'react-native';
-import NewPipeService from '../services/NewPipeService';
-import type { StreamInfo, AudioStream } from '../types/newpipe';
-import { BackIcon } from './PlayerIcons';
 import { RenderHTML } from 'react-native-render-html';
+import { useStreamInfo } from '../hooks/useStreamInfo';
+import { accentColor } from '../theme/colors';
+import type { AudioStream } from '../types/newpipe';
+import { BackIcon } from './PlayerIcons';
+import { Drawer } from './Drawer';
+import { AudioStreamSelector } from './AudioStreamSelector';
+import NextUpQueue from './NextUpQueue';
 
-const { height } = Dimensions.get('window');
+const { height, width } = Dimensions.get('window');
 
 interface StreamInfoViewerProps {
     initialUrl?: string;
@@ -25,49 +29,13 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
   onClose,
   onAudioStreamSelect,
 }) => {
-  const [error, setError] = useState<string | null>(null);
-  const [streamInfo, setStreamInfo] = useState<StreamInfo | null>(null);
-  const [selectedAudioStream, setSelectedAudioStream] = useState<AudioStream | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (initialUrl) {
-      fetchStreamInfo(initialUrl);
-    }
-  }, [initialUrl]);
-
-  const fetchStreamInfo = async (videoUrl: string) => {
-    if (!videoUrl) {
-      setError('Please enter a URL');
-      return;
-    }
-
-    try {
-      setError(null);
-      setLoading(true);
-      const info = await NewPipeService.getStreamInfo(videoUrl);
-      setStreamInfo(info);
-
-      // Automatically select highest quality audio stream
-      if (info.audioStreams && info.audioStreams.length > 0) {
-        const bestAudio = info.audioStreams.reduce((prev: AudioStream, current: AudioStream) =>
-          prev.averageBitrate > current.averageBitrate ? prev : current
-        );
-        setSelectedAudioStream(bestAudio);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch stream info');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStreamSelect = (stream: AudioStream) => {
-    setSelectedAudioStream(stream);
-    if (onAudioStreamSelect) {
-      onAudioStreamSelect(stream);
-    }
-  };
+  const [isOpen, setIsOpen] = useState(false);
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
+  const [isNextUpOpen, setIsNextUpOpen] = useState(false);
+  const {error, streamInfo, loading, selectedAudioStream, handleStreamSelect} = useStreamInfo({
+    initialUrl,
+    onAudioStreamSelect,
+  });
 
   return (
     <View style={styles.container}>
@@ -81,9 +49,8 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
         <Text style={styles.headerTitle}>Stream Info</Text>
       </View>
 
-      <ScrollView
+      <View
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollViewContent}
       >
         {error && (
           <Text style={styles.error}>{error}</Text>
@@ -91,37 +58,51 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
 
         {loading ? (
           <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color="#1DB954" />
+            <ActivityIndicator size="large" color={accentColor} />
           </View>
         ) : streamInfo ? (
           <View style={styles.infoContainer}>
-            <Text style={styles.title}>{streamInfo.title}</Text>
-            <Text style={styles.uploader}>By {streamInfo.uploaderName}</Text>
-            <Text style={styles.views}>{streamInfo.viewCount.toLocaleString()} views</Text>
+            <View style={styles.infoHeader}>
+              <Image src={streamInfo.thumbnailUrl} source={{ uri: streamInfo.thumbnailUrl }} style={styles.thumbnail} />
+              <Text style={styles.title}>{streamInfo.title}</Text>
+              <Text style={styles.uploader}>By {streamInfo.uploaderName}</Text>
+              <Text style={styles.views}>{streamInfo.viewCount.toLocaleString()} views</Text>
+            </View>
 
-            <Text style={styles.sectionTitle}>Available Audio Streams</Text>
-            {streamInfo.audioStreams.map((stream, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.streamItem,
-                  selectedAudioStream?.url === stream.url && styles.selectedStream,
-                ]}
-                onPress={() => handleStreamSelect(stream)}
-              >
-                <Text style={styles.streamText}>
-                  {stream.format} - {stream.averageBitrate}kbps
-                </Text>
+            <View style={styles.settingsContainer}>
+              <TouchableOpacity onPress={() => setIsOpen(!isOpen)}>
+                <Text style={styles.title}>⚙</Text>
               </TouchableOpacity>
-            ))}
-
-            <Text style={styles.sectionTitle}>Description</Text>
-            <Text style={styles.description}>
-              <RenderHTML source={{ html: streamInfo.description }} tagsStyles={{ body: { color: '#fff' } }} />
-            </Text>
+              <TouchableOpacity onPress={() => setIsDescriptionOpen(!isDescriptionOpen)}>
+                <Text style={styles.title}>Lyrics</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setIsNextUpOpen(!isNextUpOpen)}>
+                <Text style={styles.title}>Next Up</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         ) : null}
-      </ScrollView>
+      </View>
+
+
+      {streamInfo && (
+        <>
+          <Drawer isOpen={isOpen} toggle={() => setIsOpen(!isOpen)} title="Settings">
+            <AudioStreamSelector
+              streamInfo={streamInfo}
+              handleStreamSelect={handleStreamSelect}
+              selectedAudioStream={selectedAudioStream}
+            />
+          </Drawer>
+          <Drawer title="Description" isOpen={isDescriptionOpen} toggle={() => setIsDescriptionOpen(!isDescriptionOpen)}>
+            <RenderHTML source={{ html: streamInfo.description }} tagsStyles={{ body: { color: '#fff', fontSize: 14 } }} />
+          </Drawer>
+          <Drawer title="Next Up" isOpen={isNextUpOpen} toggle={() => setIsNextUpOpen(!isNextUpOpen)}>
+            <NextUpQueue />
+          </Drawer>
+        </>
+      )}
+
     </View>
   );
 };
@@ -140,6 +121,18 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  infoHeader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  settingsContainer: {
+    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
+    alignSelf: 'flex-end',
+    flexDirection: 'row',
+    gap: 12,
   },
   scrollViewContent: {
     paddingBottom: height * 0.15, // Add padding at the bottom to account for the NextUp component
@@ -172,7 +165,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#282828',
   },
   button: {
-    backgroundColor: '#1DB954',
+    backgroundColor: accentColor,
     padding: 10,
     borderRadius: 4,
     justifyContent: 'center',
@@ -187,6 +180,7 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     padding: 16,
+    flex: 1,
   },
   title: {
     fontSize: 20,
@@ -223,7 +217,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   selectedStream: {
-    backgroundColor: '#1DB954',
+    backgroundColor: accentColor,
   },
   streamText: {
     fontSize: 14,
@@ -234,6 +228,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: height * 0.7,
+  },
+  thumbnail: {
+    alignSelf: 'center',
+    height: width * 0.6,
+    width: width * 0.6,
+    marginBottom: 16,
+    elevation: 10,
   },
 });
 
