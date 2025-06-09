@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import type { SearchResult } from '../types/newpipe';
 import { useTrackSelection } from '../hooks/useTrackSelection';
+import { accentColor } from '../theme/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -61,7 +62,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 12,
     marginBottom: 12,
-    backgroundColor: '#282828',
+    backgroundColor: '#404040',
     borderRadius: 12,
     ...Platform.select({
       ios: {
@@ -77,7 +78,7 @@ const styles = StyleSheet.create({
   },
   currentTrack: {
     backgroundColor: '#383838',
-    borderColor: '#1DB954',
+    borderColor: accentColor,
     borderWidth: 1,
   },
   thumbnailContainer: {
@@ -95,7 +96,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#1DB954',
+    backgroundColor: accentColor,
     paddingVertical: 6,
     alignItems: 'center',
   },
@@ -116,7 +117,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   currentTrackTitle: {
-    color: '#1DB954',
+    color: accentColor,
   },
 });
 

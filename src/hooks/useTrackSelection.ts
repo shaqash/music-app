@@ -10,6 +10,7 @@ export const useTrackSelection = () => {
     setCurrentStreamInfo,
     setCurrentAudioStream,
     setLoadingStream,
+    setShowStreamInfo,
     setError,
     currentStreamInfo,
   } = useAppContext();
@@ -17,6 +18,7 @@ export const useTrackSelection = () => {
   const handleTrackSelect = async (track: SearchResult) => {
     setLoadingStream(true);
     setCurrentTrackUrl(track.url);
+    setShowStreamInfo(true);
     try {
       // Save to recent videos
       await StorageService.addRecentVideo(track);
@@ -46,6 +48,7 @@ export const useTrackSelection = () => {
         url: stream.url,
         title: currentStreamInfo?.title || 'Unknown Title',
         artist: currentStreamInfo?.uploaderName || 'Unknown Artist',
+        artwork: currentStreamInfo?.thumbnailUrl || '',
       });
       await TrackPlayer.play();
     } catch (error) {

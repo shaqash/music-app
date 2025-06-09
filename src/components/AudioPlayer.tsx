@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { useAudioControls } from '../hooks/useAudioControls';
 import { PauseIcon, PlayIcon } from './PlayerIcons';
+import { accentColor } from '../theme/colors';
+import { useAppContext } from '../context/AppContext';
 
 const formatTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
@@ -17,6 +19,7 @@ const formatTime = (seconds: number): string => {
 };
 
 const AudioPlayer: React.FC = () => {
+  const { showStreamInfo } = useAppContext();
   const {
     currentStreamInfo,
     setShowStreamInfo,
@@ -30,7 +33,7 @@ const AudioPlayer: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {currentStreamInfo?.title && (
+      {!showStreamInfo && currentStreamInfo?.title && (
         <TouchableOpacity onPress={() => setShowStreamInfo(true)}>
           <View style={styles.trackInfo}>
             <Text style={styles.title} numberOfLines={1}>
@@ -124,7 +127,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#1DB954',
+    backgroundColor: accentColor,
   },
   title: {
     fontSize: 16,

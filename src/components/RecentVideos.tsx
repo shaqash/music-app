@@ -7,9 +7,13 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { StorageService } from '../services/StorageService';
 import type { SearchResult } from '../types/newpipe';
+import { accentColor } from '../theme/colors';
+
+const { width } = Dimensions.get('window');
 
 interface RecentVideosProps {
     onVideoSelect: (video: SearchResult) => void;
@@ -40,23 +44,23 @@ export const RecentVideos: React.FC<RecentVideosProps> = ({ onVideoSelect }) => 
       onPress={() => onVideoSelect(item)}
     >
       {item.thumbnailUrl && (
-        <Image
-          source={{ uri: item.thumbnailUrl }}
-          style={styles.thumbnail}
-        />
+        <View style={styles.videoItemContainer}>
+          <Image
+            source={{ uri: item.thumbnailUrl }}
+            style={styles.thumbnail}
+          />
+        </View>
       )}
-      <View style={styles.videoInfo}>
-        <Text style={styles.videoTitle} numberOfLines={2}>
-          {item.title}
-        </Text>
-      </View>
+      <Text style={styles.videoTitle} numberOfLines={1} ellipsizeMode="tail">
+        {item.title}
+      </Text>
     </TouchableOpacity>
   );
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1DB954" />
+        <ActivityIndicator size="large" color={accentColor} />
       </View>
     );
   }
@@ -79,7 +83,8 @@ export const RecentVideos: React.FC<RecentVideosProps> = ({ onVideoSelect }) => 
         data={recentVideos}
         renderItem={renderVideo}
         keyExtractor={(item) => item.url}
-        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+        horizontal={true}
         contentContainerStyle={styles.listContent}
       />
     </View>
@@ -88,14 +93,17 @@ export const RecentVideos: React.FC<RecentVideosProps> = ({ onVideoSelect }) => 
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: '#121212',
   },
   sectionTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
-    padding: 16,
+    padding: 12,
+    paddingBottom: 6,
+  },
+  videoItemContainer: {
+    borderRadius: 8,
   },
   loadingContainer: {
     flex: 1,
@@ -123,24 +131,18 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   videoItem: {
-    flexDirection: 'row',
-    padding: 8,
-    marginBottom: 8,
-    backgroundColor: '#282828',
+    maxWidth: 84,
+    marginRight: 12,
     borderRadius: 8,
   },
   thumbnail: {
-    width: 120,
-    height: 68,
-    borderRadius: 4,
-  },
-  videoInfo: {
-    flex: 1,
-    marginLeft: 12,
-    justifyContent: 'center',
+    width: width * 0.22,
+    height: (width * 0.22),
+    borderRadius: 8,
   },
   videoTitle: {
-    fontSize: 16,
+    marginTop: 3,
+    fontSize: 12,
     color: '#fff',
     fontWeight: '500',
   },

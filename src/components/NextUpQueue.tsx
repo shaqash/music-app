@@ -1,40 +1,18 @@
 import React from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   FlatList,
-  TouchableOpacity,
-  Platform,
-  Animated,
-  LayoutAnimation,
-  UIManager,
 } from 'react-native';
 import type { SearchResult } from '../types/newpipe';
 import useRelatedTracks from '../hooks/useRelatedTracks';
 import { useAppContext } from '../context/AppContext';
 import NextUpTrack from './NextUpTrack';
 
-// Enable LayoutAnimation for Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 export const NextUpQueue: React.FC = () => {
   const { currentTrackUrl } = useAppContext();
   const { relatedTracks } = useRelatedTracks(currentTrackUrl);
-  const [isCollapsed, setIsCollapsed] = React.useState(true);
-  const rotateAnim = React.useRef(new Animated.Value(0)).current;
-
-  const toggleCollapse = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsCollapsed(!isCollapsed);
-    Animated.timing(rotateAnim, {
-      toValue: isCollapsed ? 1 : 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  };
 
   if (relatedTracks.length === 0) {
     return (
@@ -42,34 +20,18 @@ export const NextUpQueue: React.FC = () => {
     );
   }
 
-  const spin = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '180deg'],
-  });
-
   return (
-    <View style={styles.container}>
-      <TouchableOpacity onPress={toggleCollapse} style={styles.headerContainer}>
-        <Text style={styles.title}>Next Up</Text>
-        <Animated.Text style={[styles.collapseIcon, { transform: [{ rotate: spin }] }]}>
-        𝅉
-        </Animated.Text>
-      </TouchableOpacity>
-      {!isCollapsed && (
-        <FlatList
-          data={relatedTracks}
-          renderItem={({ item }: { item: SearchResult }) => (
-            <NextUpTrack
-              track={item}
-              isCurrentTrack={item.url === currentTrackUrl}
-            />
-          )}
-          keyExtractor={(item) => item.url}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
+    <FlatList
+      data={relatedTracks}
+      renderItem={({ item }: { item: SearchResult }) => (
+        <NextUpTrack
+          track={item}
+          isCurrentTrack={item.url === currentTrackUrl}
         />
       )}
-    </View>
+      keyExtractor={(item) => item.url}
+      showsVerticalScrollIndicator={false}
+    />
   );
 };
 
@@ -93,9 +55,6 @@ const styles = StyleSheet.create({
   collapseIcon: {
     color: '#fff',
     fontSize: 28,
-  },
-  listContent: {
-    padding: 12,
   },
   emptyContainer: {
     flex: 1,

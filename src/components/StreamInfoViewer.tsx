@@ -1,18 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  View,
-  Text, TouchableOpacity,
-  StyleSheet,
-  ScrollView,
   ActivityIndicator,
   Dimensions,
+  ImageBackground,
+  StyleSheet,
+  Text, TouchableOpacity,
+  View,
 } from 'react-native';
-import NewPipeService from '../services/NewPipeService';
-import type { StreamInfo, AudioStream } from '../types/newpipe';
+import { useStreamInfo } from '../hooks/useStreamInfo';
+import { accentColor } from '../theme/colors';
+import type { AudioStream } from '../types/newpipe';
 import { BackIcon } from './PlayerIcons';
-import { RenderHTML } from 'react-native-render-html';
+import { Drawer } from './Drawer';
+import { AudioStreamSelector } from './AudioStreamSelector';
+import NextUpQueue from './NextUpQueue';
+import { Description } from './Description';
+import Video from 'react-native-video';
 
-const { height } = Dimensions.get('window');
+const { height, width } = Dimensions.get('window');
 
 interface StreamInfoViewerProps {
     initialUrl?: string;
@@ -25,113 +30,131 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
   onClose,
   onAudioStreamSelect,
 }) => {
-  const [error, setError] = useState<string | null>(null);
-  const [streamInfo, setStreamInfo] = useState<StreamInfo | null>(null);
-  const [selectedAudioStream, setSelectedAudioStream] = useState<AudioStream | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
+  const [isNextUpOpen, setIsNextUpOpen] = useState(false);
+  const {error, streamInfo, loading, selectedAudioStream, handleStreamSelect} = useStreamInfo({
+    initialUrl,
+    onAudioStreamSelect,
+  });
 
-  useEffect(() => {
-    if (initialUrl) {
-      fetchStreamInfo(initialUrl);
-    }
-  }, [initialUrl]);
-
-  const fetchStreamInfo = async (videoUrl: string) => {
-    if (!videoUrl) {
-      setError('Please enter a URL');
-      return;
-    }
-
-    try {
-      setError(null);
-      setLoading(true);
-      const info = await NewPipeService.getStreamInfo(videoUrl);
-      setStreamInfo(info);
-
-      // Automatically select highest quality audio stream
-      if (info.audioStreams && info.audioStreams.length > 0) {
-        const bestAudio = info.audioStreams.reduce((prev: AudioStream, current: AudioStream) =>
-          prev.averageBitrate > current.averageBitrate ? prev : current
-        );
-        setSelectedAudioStream(bestAudio);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch stream info');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStreamSelect = (stream: AudioStream) => {
-    setSelectedAudioStream(stream);
-    if (onAudioStreamSelect) {
-      onAudioStreamSelect(stream);
-    }
-  };
+  console.log({streamInfo});
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={onClose}
-        >
-          <BackIcon size={32} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Stream Info</Text>
-      </View>
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollViewContent}
+      <ImageBackground
+        source={{ uri: streamInfo?.thumbnailUrl }}
+        style={styles.thumbnail}
+        imageStyle={styles.thumbnailImg}
+        blurRadius={1}
       >
-        {error && (
-          <Text style={styles.error}>{error}</Text>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={onClose}
+          >
+            <BackIcon size={32} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Discover</Text>
+        </View>
+
+        <View
+          style={styles.scrollView}
+        >
+
+          {error && (
+            <Text style={styles.error}>{error}</Text>
+          )}
+
+          {loading ? (
+            <View style={styles.loaderContainer}>
+              <ActivityIndicator size="large" color={accentColor} />
+            </View>
+          ) : streamInfo ? (
+            <View style={styles.infoContainer}>
+              <View style={styles.infoHeader}>
+                <View style={styles.videoContainer}>
+                  <Video
+                    source={{ uri: streamInfo.videoStreams[0].url }}
+                    filter="CIColorMonochrome"
+                    playWhenInactive={true}
+                    disableFocus
+                    filterEnabled
+                    muted={true}
+                    playInBackground={false}
+                    repeat={true}
+                    style={styles.video}
+                  />
+                </View>
+                <Text style={styles.title} numberOfLines={2}>{streamInfo.title}</Text>
+                <Text style={styles.uploader}>By {streamInfo.uploaderName}</Text>
+                <Text style={styles.views}>{streamInfo.viewCount.toLocaleString()} views</Text>
+              </View>
+
+              <View style={styles.settingsContainer}>
+                <TouchableOpacity onPress={() => setIsOpen(!isOpen)}>
+                  <Text style={styles.title}>⚙</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setIsDescriptionOpen(!isDescriptionOpen)}>
+                  <Text style={styles.title}>☰</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setIsNextUpOpen(!isNextUpOpen)}>
+                  <Text style={styles.title}>Up Next</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : null}
+
+        </View>
+
+
+        {streamInfo && (
+          <>
+            <Drawer isOpen={isOpen} toggle={() => setIsOpen(!isOpen)} title="Quality Settings">
+              <AudioStreamSelector
+                streamInfo={streamInfo}
+                handleStreamSelect={handleStreamSelect}
+                selectedAudioStream={selectedAudioStream}
+              />
+            </Drawer>
+            <Drawer title="Description" isOpen={isDescriptionOpen} toggle={() => setIsDescriptionOpen(!isDescriptionOpen)}>
+              <Description description={streamInfo.description} />
+            </Drawer>
+            <Drawer title="Up Next" isOpen={isNextUpOpen} toggle={() => setIsNextUpOpen(!isNextUpOpen)}>
+              <NextUpQueue />
+            </Drawer>
+          </>
         )}
-
-        {loading ? (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color="#1DB954" />
-          </View>
-        ) : streamInfo ? (
-          <View style={styles.infoContainer}>
-            <Text style={styles.title}>{streamInfo.title}</Text>
-            <Text style={styles.uploader}>By {streamInfo.uploaderName}</Text>
-            <Text style={styles.views}>{streamInfo.viewCount.toLocaleString()} views</Text>
-
-            <Text style={styles.sectionTitle}>Available Audio Streams</Text>
-            {streamInfo.audioStreams.map((stream, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.streamItem,
-                  selectedAudioStream?.url === stream.url && styles.selectedStream,
-                ]}
-                onPress={() => handleStreamSelect(stream)}
-              >
-                <Text style={styles.streamText}>
-                  {stream.format} - {stream.averageBitrate}kbps
-                </Text>
-              </TouchableOpacity>
-            ))}
-
-            <Text style={styles.sectionTitle}>Description</Text>
-            <Text style={styles.description}>
-              <RenderHTML source={{ html: streamInfo.description }} tagsStyles={{ body: { color: '#fff' } }} />
-            </Text>
-          </View>
-        ) : null}
-      </ScrollView>
+      </ImageBackground>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  video: {
+    width: '140%',
+    alignSelf: 'center',
+    aspectRatio: 16 / 9,
+  },
+  videoContainer: {
+    width: width * 0.95,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    marginBottom: 42,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: 'rgb(10, 10, 10)',
   },
   header: {
+    backgroundColor: 'rgba(18, 18, 18, 1)',
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
@@ -140,6 +163,21 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  infoHeader: {
+    flex: 1,
+    justifyContent: 'center',
+    textAlign: 'center',
+    alignSelf: 'center',
+    alignContent: 'center',
+    alignItems: 'center',
+  },
+  settingsContainer: {
+    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
+    alignSelf: 'flex-end',
+    flexDirection: 'row',
+    gap: 18,
   },
   scrollViewContent: {
     paddingBottom: height * 0.15, // Add padding at the bottom to account for the NextUp component
@@ -172,7 +210,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#282828',
   },
   button: {
-    backgroundColor: '#1DB954',
+    backgroundColor: accentColor,
     padding: 10,
     borderRadius: 4,
     justifyContent: 'center',
@@ -187,21 +225,25 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     padding: 16,
+    flex: 1,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
+    textAlign: 'center',
     color: '#fff',
     marginBottom: 8,
   },
   uploader: {
     fontSize: 16,
     color: '#b3b3b3',
+    textAlign: 'center',
     marginBottom: 4,
   },
   views: {
     fontSize: 14,
     color: '#b3b3b3',
+    textAlign: 'center',
     marginBottom: 16,
   },
   sectionTitle: {
@@ -211,11 +253,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
   },
-  description: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#b3b3b3',
-  },
   streamItem: {
     backgroundColor: '#282828',
     padding: 12,
@@ -223,7 +260,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   selectedStream: {
-    backgroundColor: '#1DB954',
+    backgroundColor: accentColor,
   },
   streamText: {
     fontSize: 14,
@@ -234,6 +271,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: height * 0.7,
+  },
+  thumbnail: {
+    flex: 1,
+    alignSelf: 'stretch',
+    width: null,
+  },
+  thumbnailImg: {
+    opacity: 0.2,
   },
 });
 

@@ -31,9 +31,6 @@ export const SearchResult: React.FC<SearchResultProps> = ({ item, onSelect }) =>
             style={styles.thumbnail}
           />
         )}
-        <View style={styles.playIconOverlay}>
-          <Text style={styles.playIcon}>▶</Text>
-        </View>
       </View>
       <View style={styles.resultTextContainer}>
         <Text style={styles.resultTitle} numberOfLines={2}>
@@ -47,10 +44,7 @@ export const SearchResult: React.FC<SearchResultProps> = ({ item, onSelect }) =>
 const styles = StyleSheet.create({
   resultItem: {
     flexDirection: 'row',
-    padding: 12,
     marginBottom: 12,
-    backgroundColor: '#282828',
-    borderRadius: 12,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -65,24 +59,12 @@ const styles = StyleSheet.create({
   },
   thumbnailContainer: {
     position: 'relative',
-    borderRadius: 12,
+    borderRadius: 6,
     overflow: 'hidden',
   },
   thumbnail: {
-    width: width * 0.35,
-    height: (width * 0.35 * 9) / 16,
-    borderRadius: 12,
-  },
-  playIconOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    opacity: 0,
-  },
-  playIcon: {
-    color: '#fff',
-    fontSize: 24,
+    width: width * 0.35 * 0.5,
+    height: (width * 0.35 * 0.5),
   },
   resultTextContainer: {
     flex: 1,
