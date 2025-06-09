@@ -12,6 +12,7 @@ import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.services.youtube.YoutubeService;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
+import org.schabi.newpipe.extractor.stream.SubtitlesStream;
 import org.schabi.newpipe.extractor.stream.StreamExtractor;
 import org.schabi.newpipe.extractor.stream.StreamType;
 import org.schabi.newpipe.extractor.stream.VideoStream;
@@ -110,6 +111,22 @@ public class NewPipeModule extends ReactContextBaseJavaModule {
                 String thumbnailUrl = thumbnails.get(0).getUrl();
                 if (thumbnailUrl != null && !thumbnailUrl.isEmpty()) {
                     result.putString("thumbnailUrl", thumbnailUrl);
+                }
+            }
+
+            List<Image> avatars = streamInfo.getUploaderAvatars();
+            if (!avatars.isEmpty()) {
+                String avatarUrl = avatars.get(0).getUrl();
+                if (avatarUrl != null && !avatarUrl.isEmpty()) {
+                    result.putString("avatarUrl", avatarUrl);
+                }
+            }
+
+            List<SubtitlesStream> subtitles = streamInfo.getSubtitles();
+            if (!subtitles.isEmpty()) {
+                String subtitleContent = subtitles.get(0).getContent();
+                if (subtitleContent != null && !subtitleContent.isEmpty()) {
+                    result.putString("subtitlesContent", subtitleContent);
                 }
             }
             

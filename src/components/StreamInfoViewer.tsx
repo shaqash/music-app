@@ -15,8 +15,9 @@ import { Drawer } from './Drawer';
 import { AudioStreamSelector } from './AudioStreamSelector';
 import NextUpQueue from './NextUpQueue';
 import { Description } from './Description';
+import Video from 'react-native-video';
 
-const { height } = Dimensions.get('window');
+const { height, width } = Dimensions.get('window');
 
 interface StreamInfoViewerProps {
     initialUrl?: string;
@@ -36,6 +37,8 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
     initialUrl,
     onAudioStreamSelect,
   });
+
+  console.log({streamInfo});
 
   return (
     <View style={styles.container}>
@@ -70,6 +73,19 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
           ) : streamInfo ? (
             <View style={styles.infoContainer}>
               <View style={styles.infoHeader}>
+                <View style={styles.videoContainer}>
+                  <Video
+                    source={{ uri: streamInfo.videoStreams[0].url }}
+                    filter="CIColorMonochrome"
+                    playWhenInactive={true}
+                    disableFocus
+                    filterEnabled
+                    muted={true}
+                    playInBackground={false}
+                    repeat={true}
+                    style={styles.video}
+                  />
+                </View>
                 <Text style={styles.title} numberOfLines={2}>{streamInfo.title}</Text>
                 <Text style={styles.uploader}>By {streamInfo.uploaderName}</Text>
                 <Text style={styles.views}>{streamInfo.viewCount.toLocaleString()} views</Text>
@@ -115,6 +131,24 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
 };
 
 const styles = StyleSheet.create({
+  video: {
+    width: '140%',
+    alignSelf: 'center',
+    aspectRatio: 16 / 9,
+  },
+  videoContainer: {
+    width: width * 0.95,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    marginBottom: 42,
+  },
   container: {
     flex: 1,
     backgroundColor: 'rgb(10, 10, 10)',
