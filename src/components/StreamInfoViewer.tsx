@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
-  Image,
+  ImageBackground,
   StyleSheet,
   Text, TouchableOpacity,
   View,
 } from 'react-native';
-import { RenderHTML } from 'react-native-render-html';
 import { useStreamInfo } from '../hooks/useStreamInfo';
 import { accentColor } from '../theme/colors';
 import type { AudioStream } from '../types/newpipe';
@@ -15,8 +14,9 @@ import { BackIcon } from './PlayerIcons';
 import { Drawer } from './Drawer';
 import { AudioStreamSelector } from './AudioStreamSelector';
 import NextUpQueue from './NextUpQueue';
+import { Description } from './Description';
 
-const { height, width } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 interface StreamInfoViewerProps {
     initialUrl?: string;
@@ -39,70 +39,77 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={onClose}
-        >
-          <BackIcon size={32} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Stream Info</Text>
-      </View>
-
-      <View
-        style={styles.scrollView}
+      <ImageBackground
+        source={{ uri: streamInfo?.thumbnailUrl }}
+        style={styles.thumbnail}
+        imageStyle={styles.thumbnailImg}
+        blurRadius={1}
       >
-        {error && (
-          <Text style={styles.error}>{error}</Text>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={onClose}
+          >
+            <BackIcon size={32} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Discover</Text>
+        </View>
+
+        <View
+          style={styles.scrollView}
+        >
+
+          {error && (
+            <Text style={styles.error}>{error}</Text>
+          )}
+
+          {loading ? (
+            <View style={styles.loaderContainer}>
+              <ActivityIndicator size="large" color={accentColor} />
+            </View>
+          ) : streamInfo ? (
+            <View style={styles.infoContainer}>
+              <View style={styles.infoHeader}>
+                <Text style={styles.title} numberOfLines={2}>{streamInfo.title}</Text>
+                <Text style={styles.uploader}>By {streamInfo.uploaderName}</Text>
+                <Text style={styles.views}>{streamInfo.viewCount.toLocaleString()} views</Text>
+              </View>
+
+              <View style={styles.settingsContainer}>
+                <TouchableOpacity onPress={() => setIsOpen(!isOpen)}>
+                  <Text style={styles.title}>⚙</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setIsDescriptionOpen(!isDescriptionOpen)}>
+                  <Text style={styles.title}>☰</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setIsNextUpOpen(!isNextUpOpen)}>
+                  <Text style={styles.title}>Up Next</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : null}
+
+        </View>
+
+
+        {streamInfo && (
+          <>
+            <Drawer isOpen={isOpen} toggle={() => setIsOpen(!isOpen)} title="Quality Settings">
+              <AudioStreamSelector
+                streamInfo={streamInfo}
+                handleStreamSelect={handleStreamSelect}
+                selectedAudioStream={selectedAudioStream}
+              />
+            </Drawer>
+            <Drawer title="Description" isOpen={isDescriptionOpen} toggle={() => setIsDescriptionOpen(!isDescriptionOpen)}>
+              <Description description={streamInfo.description} />
+            </Drawer>
+            <Drawer title="Up Next" isOpen={isNextUpOpen} toggle={() => setIsNextUpOpen(!isNextUpOpen)}>
+              <NextUpQueue />
+            </Drawer>
+          </>
         )}
-
-        {loading ? (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color={accentColor} />
-          </View>
-        ) : streamInfo ? (
-          <View style={styles.infoContainer}>
-            <View style={styles.infoHeader}>
-              <Image src={streamInfo.thumbnailUrl} source={{ uri: streamInfo.thumbnailUrl }} style={styles.thumbnail} />
-              <Text style={styles.title}>{streamInfo.title}</Text>
-              <Text style={styles.uploader}>By {streamInfo.uploaderName}</Text>
-              <Text style={styles.views}>{streamInfo.viewCount.toLocaleString()} views</Text>
-            </View>
-
-            <View style={styles.settingsContainer}>
-              <TouchableOpacity onPress={() => setIsOpen(!isOpen)}>
-                <Text style={styles.title}>⚙</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setIsDescriptionOpen(!isDescriptionOpen)}>
-                <Text style={styles.title}>Lyrics</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setIsNextUpOpen(!isNextUpOpen)}>
-                <Text style={styles.title}>Next Up</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : null}
-      </View>
-
-
-      {streamInfo && (
-        <>
-          <Drawer isOpen={isOpen} toggle={() => setIsOpen(!isOpen)} title="Settings">
-            <AudioStreamSelector
-              streamInfo={streamInfo}
-              handleStreamSelect={handleStreamSelect}
-              selectedAudioStream={selectedAudioStream}
-            />
-          </Drawer>
-          <Drawer title="Description" isOpen={isDescriptionOpen} toggle={() => setIsDescriptionOpen(!isDescriptionOpen)}>
-            <RenderHTML source={{ html: streamInfo.description }} tagsStyles={{ body: { color: '#fff', fontSize: 14 } }} />
-          </Drawer>
-          <Drawer title="Next Up" isOpen={isNextUpOpen} toggle={() => setIsNextUpOpen(!isNextUpOpen)}>
-            <NextUpQueue />
-          </Drawer>
-        </>
-      )}
-
+      </ImageBackground>
     </View>
   );
 };
@@ -110,9 +117,10 @@ export const StreamInfoViewer: React.FC<StreamInfoViewerProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: 'rgb(10, 10, 10)',
   },
   header: {
+    backgroundColor: 'rgba(18, 18, 18, 1)',
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
@@ -125,6 +133,9 @@ const styles = StyleSheet.create({
   infoHeader: {
     flex: 1,
     justifyContent: 'center',
+    textAlign: 'center',
+    alignSelf: 'center',
+    alignContent: 'center',
     alignItems: 'center',
   },
   settingsContainer: {
@@ -132,7 +143,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignSelf: 'flex-end',
     flexDirection: 'row',
-    gap: 12,
+    gap: 18,
   },
   scrollViewContent: {
     paddingBottom: height * 0.15, // Add padding at the bottom to account for the NextUp component
@@ -185,17 +196,20 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
+    textAlign: 'center',
     color: '#fff',
     marginBottom: 8,
   },
   uploader: {
     fontSize: 16,
     color: '#b3b3b3',
+    textAlign: 'center',
     marginBottom: 4,
   },
   views: {
     fontSize: 14,
     color: '#b3b3b3',
+    textAlign: 'center',
     marginBottom: 16,
   },
   sectionTitle: {
@@ -204,11 +218,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginTop: 16,
     marginBottom: 8,
-  },
-  description: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#b3b3b3',
   },
   streamItem: {
     backgroundColor: '#282828',
@@ -230,11 +239,12 @@ const styles = StyleSheet.create({
     minHeight: height * 0.7,
   },
   thumbnail: {
-    alignSelf: 'center',
-    height: width * 0.6,
-    width: width * 0.6,
-    marginBottom: 16,
-    elevation: 10,
+    flex: 1,
+    alignSelf: 'stretch',
+    width: null,
+  },
+  thumbnailImg: {
+    opacity: 0.2,
   },
 });
 
