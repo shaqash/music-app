@@ -26,6 +26,10 @@ Read individual takeaways below.
 - [ ] queue
 - [ ] playlist
 - [ ] add data source for podcasts
+- [x] Video in info page
+- [ ] Subtitles -> Lyrics instead of description
+- [ ] Discover screen - need ideas maybe search query "trending music" or take last recent and get it's related videos
+- [ ] i18n
 
 # Dev log
 
